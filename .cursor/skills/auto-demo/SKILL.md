@@ -1,44 +1,48 @@
-# AutoDemo — custom user flow
-
-Use this skill when the user wants a recorded demo video of a **specific flow** they describe.
-
-**Do not stop at writing the script.** The task is complete only when a video file exists (or you have clearly reported a blocking error after trying the steps below).
-
-Assume the user’s **own app repo** is the current workspace. AutoDemo is a **dependency** they installed (or will install) there—not the project they are building.
-
-**Script source:** The DemoScript must be **written end-to-end by you (the agent)**—full file on disk, runnable as-is. Do not use `scaffold`, boilerplate CLI output, or TODO stubs for the user to finish. If the flow changes, you rewrite the script.
-
+﻿---
+name: autodemo-custom-user-flow
+description: Create and export an AutoDemo video for a user-specified app flow, end-to-end. Use when the user asks for a recorded demo video of a specific interaction flow in their local app.
 ---
 
-## End-to-end workflow (do all applicable steps)
+# AutoDemo - Custom User Flow
 
-1. **Clarify inputs** (ask if missing):
-   - Local app URL (e.g. `http://localhost:3000`).
-   - Desired output path (default: `demo.mp4` in the user’s project root or a path they specify).
-   - Any timing needs (slow app → higher `--startup-wait-ms` / `--tail-wait-ms`).
+Use this skill when the user wants a recorded demo video of a specific flow they describe.
 
-2. **Preflight — app must be reachable**
-   - The app should be running so `--url` loads in a browser.
-   - If a quick check fails (e.g. connection refused), say so and do not pretend the export succeeded.
+Do not stop at writing the script. The task is complete only when a video file exists, or you have clearly reported a blocking error after attempting the workflow below.
 
-3. **Preflight — AutoDemo installed**
-   - Ensure the user’s project has AutoDemo available, e.g. `npm install autodemo` (or the published package name and version they use).
-   - Run `npm install` in the **user’s project** if needed.
-   - **CLI:** use the `auto-demo` binary via **`npx auto-demo …`** (works whether or not it is listed in `package.json` scripts).
-   - If `npx auto-demo` fails because the package has no usable build, install a release that ships `dist/`, or see **Maintainers** at the bottom.
+Assume the user's app repository is the current workspace. AutoDemo is a dependency in that repo, not the product being built.
 
-4. **Preflight — Playwright browser (first-time / CI)**
-   - If `run` fails with missing browser / executable errors:
-     - `npx playwright install chromium`
-   - Retry from the **user’s project** directory.
+## Required Inputs
 
-5. **Script file (in the user’s repo) — agent-generated only**
-   - **Create or replace** the full script at a path you choose, e.g. `.autodemo/demo-flow.ts`, `scripts/autodemo/demo.ts`, or `playwright/demo-flow.ts`.
-   - The file must include everything needed to run: helpers (`settle`, `demoStep`, etc.), the default export, and the complete flow—no placeholders.
-   - Follow **Script authoring** below for selectors, pacing, navigation rules, and typing.
+Use sensible defaults unless the user specifies overrides:
 
-6. **Export the video (required)**
-   - From the **user’s project root**, run `run` with explicit pacing (tune if the app is slow):
+- Local app URL defaults to `http://localhost:3000`.
+- Output video path defaults to `demo.mp4` in project root.
+- Timing values use workflow defaults unless the user requests custom pacing.
+
+Ask follow-up questions only when a provided value is ambiguous/invalid, or when preflight checks fail and an override is needed.
+
+## End-to-End Workflow
+
+1. Resolve inputs:
+   - Use defaults for URL/output/timing when not explicitly provided.
+   - Confirm only user-provided overrides.
+2. Preflight app reachability:
+   - Verify the app is running and reachable at the resolved URL.
+   - If unreachable, report the error and do not claim export success.
+3. Preflight AutoDemo availability:
+   - Check `package.json` first (`dependencies`, `devDependencies`, or `scripts`) for `autodemo` usage before installing anything.
+   - If `autodemo` is already present, run via `npx auto-demo ...` from project root.
+   - If `autodemo` is not present, ask the user whether to install it in the current repo or use an existing setup from another repo/path.
+   - Only run `npm install autodemo` in the current repo after explicit user confirmation.
+   - If `npx auto-demo` fails due to package/build issues, install a release that ships `dist/`, or follow Maintainers flow when applicable.
+4. Preflight Playwright browser:
+   - If run fails with missing Chromium/browser executable errors, execute `npx playwright install chromium`.
+   - Retry from project root.
+5. Script creation (agent-authored only):
+   - Create or replace a full script file in the repo (for example `.autodemo/demo-flow.ts`).
+   - The script must be complete and runnable as-is, including helpers and full flow.
+   - No scaffold output, TODOs, placeholders, or partial stubs.
+6. Export video (required):
 
 ```bash
 npx auto-demo run \
@@ -50,55 +54,3 @@ npx auto-demo run \
   --tail-wait-ms 3000 \
   --action-delay-ms 450 \
   --type-char-delay-ms 45
-```
-
-   - For faster iteration (no pixel compositing): add `--no-composite`.
-
-7. **Verify success**
-   - Confirm `<output.mp4>` exists (size > 0 if you can check).
-   - Tell the user the path to the mp4 (workspace-relative or absolute).
-   - Mention the sidecar `*.zoom.json` next to the mp4 when present.
-
-8. **On failure**
-   - Surface CLI stderr / exit code; fix selectors or waits; retry.
-   - Do not claim the demo exported if `run` did not succeed.
-
----
-
-## Script authoring (what to write in the file)
-
-**Infer from the user:** the ordered steps, screens, interactions, and what to emphasize. The `--url` page is **already loaded** when your script starts.
-
-**Implementation checklist**
-
-1. Turn that into a short sequence of user-visible actions.
-2. Pick resilient selectors for each step.
-3. Write **one complete module** on disk: local helpers if needed (`settle`, `demoStep`, etc.), then `export default async function ({ page, actions }) { ... }` with the **full** flow—no TODOs or stubs.
-4. Use `actions.hover`, `actions.click`, `actions.dblclick`, `actions.type` so coordinates are recorded. Avoid raw `locator.click()` unless there is no wrapped equivalent.
-5. Group work into semantic steps; settle between major steps (navigation, modal open, submit, etc.).
-
-**Selectors (priority order)**
-
-- `getByRole`, `getByLabel`, `getByTestId`, then cautious text fallback.
-
-**Settling and pacing**
-
-- No long or random sleeps; no network mocking.
-- After route changes: `waitForLoadState("networkidle")` where appropriate.
-- For dynamic UI: visibility / hidden assertions instead of blind waits.
-- Optional short showcase pauses (about 300–700ms) only after major state changes when it helps readability.
-- Keep total scripted time roughly **15–45 seconds** unless the user asks otherwise; stay under **~60 seconds** unless they want longer.
-
-**Navigation**
-
-- Do **not** `page.goto` the initial landing URL; the recorder already did. Use `goto` only for **additional** routes the flow needs (or a deliberate reload the user requested).
-
-**Typing**
-
-- Prefer a plain `export default async function ({ page, actions }) { ... }` unless the project already has a resolvable `DemoScript` type import.
-
----
-
-## Maintainers (AutoDemo source clone only)
-
-If the workspace **is** the AutoDemo package source (not a consumer app), use `npm run build` and `node dist/cli/index.js run …` from that clone instead of `npx auto-demo`. (The `scaffold` CLI is for manual use without an agent; this skill still expects you to author the whole script.)

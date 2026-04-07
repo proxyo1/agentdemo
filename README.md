@@ -22,11 +22,11 @@ Expected agent behavior:
 ## Local development (this repo)
 
 1. Install dependencies:
-   - `npm install`
+  - `npm install`
 2. Build:
-   - `npm run build`
+  - `npm run build`
 3. Run:
-   - `node dist/cli/index.js run --script <path-to-script.ts> --url <local-url> --out <output.mp4> --fps 60 --startup-wait-ms 2000 --tail-wait-ms 3000 --action-delay-ms 450 --type-char-delay-ms 45`
+  - `node dist/cli/index.js run --script <path-to-script.ts> --url <local-url> --out <output.mp4> --fps 60 --startup-wait-ms 2000 --tail-wait-ms 3000 --action-delay-ms 450 --type-char-delay-ms 45`
 
 TypeScript entrypoint (without building first):
 
