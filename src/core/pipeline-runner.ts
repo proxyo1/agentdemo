@@ -14,14 +14,18 @@ export async function runPipeline(rawOptions: unknown): Promise<void> {
     const artifacts = await recordSession({
       scriptPath: options.script,
       url: options.url,
-      tempDir
+      tempDir,
+      startupWaitMs: options.startupWaitMs,
+      tailWaitMs: options.tailWaitMs
     });
 
     logger.info("Rendering final mp4...");
     await renderPolishedVideo({
       rawVideoPath: artifacts.rawVideoPath,
       coordsPath: artifacts.coordsPath,
-      outputPath: options.out
+      outputPath: options.out,
+      fps: options.fps,
+      interpolate: options.interpolate
     });
     logger.info(`Done: ${options.out}`);
   } finally {

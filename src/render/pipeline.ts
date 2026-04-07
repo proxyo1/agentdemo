@@ -25,12 +25,22 @@ export async function renderPolishedVideo(input: RenderInput): Promise<void> {
     return;
   }
 
+  const vf = input.interpolate
+    ? `minterpolate=fps=${input.fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bidir:vsbmc=1`
+    : `fps=${input.fps}`;
+
   await execa(ffmpegPath, [
     "-y",
     "-i",
     input.rawVideoPath,
+    "-vf",
+    vf,
     "-c:v",
     "libx264",
+    "-preset",
+    "medium",
+    "-crf",
+    "18",
     "-pix_fmt",
     "yuv420p",
     "-movflags",

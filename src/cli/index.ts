@@ -11,6 +11,10 @@ program
   .requiredOption("--script <path>", "Playwright script path")
   .requiredOption("--url <url>", "Base URL for local app")
   .option("--out <path>", "Final mp4 output path", "demo.mp4")
+  .option("--fps <number>", "Output frame rate (24-120)", "60")
+  .option("--no-interpolate", "Disable frame interpolation during render")
+  .option("--startup-wait-ms <number>", "Extra wait after initial load for late content", "2000")
+  .option("--tail-wait-ms <number>", "Extra wait before stopping recording", "3000")
   .option("--keep-temp", "Keep temporary artifacts", false)
   .action(async (options) => {
     try {

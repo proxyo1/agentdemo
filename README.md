@@ -16,12 +16,14 @@ AutoDemo records a local Playwright flow and renders a polished local `mp4`.
 2. Build:
    - `npm run build`
 3. Run:
-   - `node dist/cli/index.js run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4`
+   - `node dist/cli/index.js run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4 --fps 60 --startup-wait-ms 2000 --tail-wait-ms 3000`
 
 For development with TypeScript entrypoint:
-- `npm run dev -- run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4`
+- `npm run dev -- run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4 --fps 60 --startup-wait-ms 2000 --tail-wait-ms 3000`
 
 ## Notes
 
 - Rendering is currently an ffmpeg normalization pass with a validated `coords.json`.
+- Default output uses 60 FPS with interpolation; disable via `--no-interpolate`.
+- Recorder waits for `networkidle`, then applies startup/tail settle windows to avoid early cutoff.
 - PixiJS cinematic cursor/camera compositor is the next step.

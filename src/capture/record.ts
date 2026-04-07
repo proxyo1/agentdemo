@@ -11,6 +11,8 @@ interface RecordInput {
   scriptPath: string;
   url: string;
   tempDir: string;
+  startupWaitMs: number;
+  tailWaitMs: number;
 }
 
 async function loadDemoScript(scriptPath: string): Promise<DemoScript> {
@@ -45,7 +47,14 @@ export async function recordSession(input: RecordInput): Promise<CaptureArtifact
   const actions = createLoggedActions(events);
 
   await page.goto(input.url);
+  await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+  if (input.startupWaitMs > 0) {
+    await page.waitForTimeout(input.startupWaitMs);
+  }
   await script({ page, actions });
+  if (input.tailWaitMs > 0) {
+    await page.waitForTimeout(input.tailWaitMs);
+  }
   await context.close();
   await browser.close();
 
