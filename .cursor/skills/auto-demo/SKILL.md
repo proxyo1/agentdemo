@@ -47,14 +47,10 @@ Ask follow-up questions only when a provided value is ambiguous/invalid, or when
 ```bash
 npx auto-demo run \
   --script <path-to-script.ts> \
-  --url <local-url> \
-  --out <output.mp4> \
-  --fps 60 \
-  --startup-wait-ms 2000 \
-  --tail-wait-ms 3000 \
-  --action-delay-ms 450 \
-  --type-char-delay-ms 45
+  --url <local-url>
 ```
+
+Use optional flags only when the user asks for overrides (for example `--out`, `--fps`, `--startup-wait-ms`, `--tail-wait-ms`, `--action-delay-ms`, `--type-char-delay-ms`).
 
 7. Verify output:
    - Confirm the final `mp4` exists at the requested output path.
