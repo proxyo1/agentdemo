@@ -1,7 +1,7 @@
-﻿---
-name: autodemo-custom-user-flow
-description: Create and export an AutoDemo video for a user-specified app flow, end-to-end. Use when the user asks for a recorded demo video of a specific interaction flow in their local app.
 ---
+
+## name: autodemo-custom-user-flow
+description: Create and export an AutoDemo video for a user-specified app flow, end-to-end. Use when the user asks for a recorded demo video of a specific interaction flow in their local app.
 
 # AutoDemo - Custom User Flow
 
@@ -24,24 +24,24 @@ Ask follow-up questions only when a provided value is ambiguous/invalid, or when
 ## End-to-End Workflow
 
 1. Resolve inputs:
-   - Use defaults for URL/output/timing when not explicitly provided.
-   - Confirm only user-provided overrides.
+  - Use defaults for URL/output/timing when not explicitly provided.
+  - Confirm only user-provided overrides.
 2. Preflight app reachability:
-   - Verify the app is running and reachable at the resolved URL.
-   - If unreachable, report the error and do not claim export success.
+  - Verify the app is running and reachable at the resolved URL.
+  - If unreachable, report the error and do not claim export success.
 3. Preflight AutoDemo availability:
-   - Check `package.json` first (`dependencies`, `devDependencies`, or `scripts`) for `autodemo` usage before installing anything.
-   - If `autodemo` is already present, run via `npx auto-demo ...` from project root.
-   - If `autodemo` is not present, ask the user whether to install it in the current repo or use an existing setup from another repo/path.
-   - Only run `npm install autodemo` in the current repo after explicit user confirmation.
-   - If `npx auto-demo` fails due to package/build issues, install a release that ships `dist/`, or follow Maintainers flow when applicable.
+  - Check `package.json` first (`dependencies`, `devDependencies`, or `scripts`) for `autodemo` usage before installing anything.
+  - If `autodemo` is already present, run via `npx auto-demo ...` from project root.
+  - If `autodemo` is not present, ask the user whether to install it in the current repo or use an existing setup from another repo/path.
+  - Only run `npm install autodemo` in the current repo after explicit user confirmation.
+  - If `npx auto-demo` fails due to package/build issues, install a release that ships `dist/`, or follow Maintainers flow when applicable.
 4. Preflight Playwright browser:
-   - If run fails with missing Chromium/browser executable errors, execute `npx playwright install chromium`.
-   - Retry from project root.
+  - If run fails with missing Chromium/browser executable errors, execute `npx playwright install chromium`.
+  - Retry from project root.
 5. Script creation (agent-authored only):
-   - Create or replace a full script file in the repo (for example `.autodemo/demo-flow.ts`).
-   - The script must be complete and runnable as-is, including helpers and full flow.
-   - No scaffold output, TODOs, placeholders, or partial stubs.
+  - Create or replace a full script file in the repo (for example `.autodemo/demo-flow.ts`).
+  - The script must be complete and runnable as-is, including helpers and full flow.
+  - No scaffold output, TODOs, placeholders, or partial stubs.
 6. Export video (required):
 
 ```bash
@@ -52,9 +52,9 @@ npx auto-demo run \
 
 Use optional flags only when the user asks for overrides (for example `--out`, `--fps`, `--startup-wait-ms`, `--tail-wait-ms`, `--action-delay-ms`, `--type-char-delay-ms`).
 
-7. Verify output:
-   - Confirm the final `mp4` exists at the requested output path.
-   - If export fails, report the exact blocking step and command error.
+1. Verify output:
+  - Confirm the final `mp4` exists at the requested output path.
+  - If export fails, report the exact blocking step and command error.
 
 ## Script Authoring Rules (Important)
 
@@ -75,3 +75,4 @@ When authoring `.autodemo/demo-flow.ts`, optimize for realistic camera framing a
   - abrupt snap-pans
   - cursor disconnected from scroll/read area
 - If the captured result still looks poor, iterate on script structure (not manual patching in generated output repos) and rerun export.
+
