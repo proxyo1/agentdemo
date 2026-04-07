@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { Command } from "commander";
+import { resolve } from "node:path";
 import { runPipeline } from "../core/pipeline-runner.js";
 import { logger } from "../core/logger.js";
-import { runFromDiff } from "../integrations/cursor/run-from-diff.js";
+import { scaffoldDemoScript } from "../integrations/demo-flow/scaffold.js";
 
 const program = new Command();
 program.name("auto-demo").description("Record and render local demo videos.");
@@ -33,26 +34,14 @@ program
   });
 
 program
-  .command("from-diff")
-  .requiredOption("--url <url>", "Base URL for local app")
-  .option("--out <path>", "Final mp4 output path", "demo.mp4")
-  .option("--base <ref>", "Base git ref used for diff", "origin/master")
-  .option("--script-path <path>", "Path for generated Playwright script", ".autodemo/tmp/generated-demo.ts")
-  .option("--cursor-png <path>", "Path to cursor PNG (default: assets/cursor.png in repo root)")
-  .option("--cursor-hotspot-x <n>", "Cursor hot spot X in PNG pixels", "4")
-  .option("--cursor-hotspot-y <n>", "Cursor hot spot Y in PNG pixels", "2")
+  .command("scaffold")
+  .description("Write a starter DemoScript file for a custom user flow")
+  .option("--out <path>", "Output path for the new script", ".autodemo/tmp/demo-flow.ts")
   .action(async (options) => {
     try {
-      const result = await runFromDiff({
-        url: options.url,
-        out: options.out,
-        baseRef: options.base,
-        scriptPath: options.scriptPath,
-        cursorPng: options.cursorPng,
-        cursorHotspotX: Number(options.cursorHotspotX),
-        cursorHotspotY: Number(options.cursorHotspotY)
-      });
-      logger.info(`Generated script: ${result.scriptPath} (${result.fileCount} changed files analyzed)`);
+      const out = resolve(options.out);
+      await scaffoldDemoScript(out);
+      logger.info(`Wrote starter script: ${out}`);
     } catch (error) {
       logger.error(error instanceof Error ? error.message : String(error));
       process.exitCode = 1;

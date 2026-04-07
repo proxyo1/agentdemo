@@ -1,47 +1,53 @@
 # AutoDemo
 
-AutoDemo records a local Playwright flow and renders a polished local `mp4`.
+AutoDemo records a local browser flow with Playwright and exports a polished `mp4`.
 
-## Current status
+## How it works
 
-- v1 path is script-required.
-- Input script contract:
-  - `export default async function ({ page, actions }) { ... }`
-- `actions.*` methods are coordinate-logged for post-processing.
+- You provide a demo script that exports `default async function ({ page, actions }) { ... }`.
+- AutoDemo records interaction coordinates through `actions.*` wrappers.
+- The render pipeline applies cinematic cursor/zoom effects and writes:
+  - Final video: `*.mp4`
+  - Sidecar timeline/debug data: `*.zoom.json`
 
-## Quick start
+## Agent-first workflow (recommended)
+
+Use the AutoDemo skill in Cursor and ask for a specific user flow.  
+Expected agent behavior:
+
+- Generate the full script in your repo (no TODO stubs).
+- Run AutoDemo to export the video.
+- Verify the output file exists and report the path.
+
+## Local development (this repo)
 
 1. Install dependencies:
-  - `npm install`
+   - `npm install`
 2. Build:
-  - `npm run build`
+   - `npm run build`
 3. Run:
-  - `node dist/cli/index.js run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4 --fps 60 --startup-wait-ms 2000 --tail-wait-ms 3000 --action-delay-ms 450 --type-char-delay-ms 45`
-4. Diff-driven skill flow:
-  - `node dist/cli/index.js from-diff --url http://localhost:3000 --out demo.mp4 --base origin/master`
+   - `node dist/cli/index.js run --script <path-to-script.ts> --url <local-url> --out <output.mp4> --fps 60 --startup-wait-ms 2000 --tail-wait-ms 3000 --action-delay-ms 450 --type-char-delay-ms 45`
 
-For development with TypeScript entrypoint:
+TypeScript entrypoint (without building first):
 
-- `npm run dev -- run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4 --fps 60 --startup-wait-ms 2000 --tail-wait-ms 3000`
-- `npm run dev -- run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4 --fps 60 --startup-wait-ms 2000 --tail-wait-ms 3000 --action-delay-ms 450 --type-char-delay-ms 45`
+- `npm run dev -- run --script <path-to-script.ts> --url <local-url> --out <output.mp4>`
 
-Faster path without per-frame compositing (transcode only):
+## CLI commands
 
-- Add `--no-composite` to skip zoom/cursor drawing in pixels (still writes `demo.mp4.zoom.json`).
+- `run` - record and render from a script.
+- `scaffold` - optional stub generator for manual script authoring.
 
 ## Notes
 
-- **Default:** cinematic compositing is baked into the MP4 (camera zoom/pan from timeline, synthetic cursor, click ripples, light motion blur on fast camera moves) via `@napi-rs/canvas` + ffmpeg frame I/O.
-- **Fallback:** if compositing throws, the CLI logs a warning and runs ffmpeg transcode/interpolation only (same as `--no-composite`).
-- With `--no-interpolate`, only the ffmpeg fallback path uses a simple fps filter; compositing path encodes from PNGs at `--fps`.
-- Recorder waits for `networkidle`, then applies startup/tail settle windows to avoid early cutoff.
-- Scripted interactions are paced by default (`--action-delay-ms 450`, `--type-char-delay-ms 45`) to avoid rushed demos.
-- Sidecar `demo.mp4.zoom.json` still includes zoom frames/regions, cursor keyframes/ripples, and motion samples for debugging.
-- `from-diff` generates `.autodemo/tmp/generated-demo.ts` from changed files and runs the full pipeline.
+- Default mode composites zoom/cursor/ripple effects into the MP4.
+- `--no-composite` skips pixel compositing for faster iteration.
+- If compositing fails, CLI falls back to ffmpeg-only transcode/interpolation.
+- Recorder waits for `networkidle`, then applies startup/tail settle windows.
+- Script actions are paced by default (`--action-delay-ms`, `--type-char-delay-ms`).
 
-### Custom cursor (PNG)
+## Custom cursor PNG
 
-- Put your pointer image at `[assets/cursor.png](assets/cursor.png)` (repo root), **or** pass `--cursor-png <path>`.
-- Default hot spot is `(4,2)` in PNG pixels. Override with `--cursor-hotspot-x` / `--cursor-hotspot-y`.
-- Example:
-  - `node dist/cli/index.js run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4 --cursor-png ./my-cursor.png --cursor-hotspot-x 4 --cursor-hotspot-y 2`
+- Use repo default at `assets/cursor.png`, or pass `--cursor-png <path>`.
+- Hot spot defaults to `(4,2)` and can be overridden with:
+  - `--cursor-hotspot-x <n>`
+  - `--cursor-hotspot-y <n>`
