@@ -4,4 +4,6 @@ export interface RenderInput {
   outputPath: string;
   fps: number;
   interpolate: boolean;
+  /** Apply OpenScreen-style zoom/cursor/ripple compositing into pixels (slower). */
+  composite: boolean;
 }

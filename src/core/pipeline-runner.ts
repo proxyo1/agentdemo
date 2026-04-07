@@ -25,7 +25,8 @@ export async function runPipeline(rawOptions: unknown): Promise<void> {
       coordsPath: artifacts.coordsPath,
       outputPath: options.out,
       fps: options.fps,
-      interpolate: options.interpolate
+      interpolate: options.interpolate,
+      composite: options.composite
     });
     logger.info(`Done: ${options.out}`);
   } finally {

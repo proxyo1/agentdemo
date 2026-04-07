@@ -15,6 +15,7 @@ program
   .option("--no-interpolate", "Disable frame interpolation during render")
   .option("--startup-wait-ms <number>", "Extra wait after initial load for late content", "2000")
   .option("--tail-wait-ms <number>", "Extra wait before stopping recording", "3000")
+  .option("--no-composite", "Skip pixel compositing (faster; ffmpeg transcode only)")
   .option("--keep-temp", "Keep temporary artifacts", false)
   .action(async (options) => {
     try {

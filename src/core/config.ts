@@ -8,11 +8,16 @@ const cliOptionsSchema = z.object({
   interpolate: z.boolean().default(true),
   startupWaitMs: z.coerce.number().int().min(0).max(30000).default(2000),
   tailWaitMs: z.coerce.number().int().min(0).max(30000).default(3000),
+  composite: z.boolean().default(true),
   keepTemp: z.boolean().default(false)
 });
 
 export type CliOptions = z.infer<typeof cliOptionsSchema>;
 
 export function parseCliOptions(options: unknown): CliOptions {
-  return cliOptionsSchema.parse(options);
+  const raw = { ...(options as Record<string, unknown>) };
+  const noComposite = raw.noComposite === true;
+  delete raw.noComposite;
+  const composite = noComposite ? false : raw.composite !== false;
+  return cliOptionsSchema.parse({ ...raw, composite });
 }
