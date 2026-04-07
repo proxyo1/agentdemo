@@ -85,7 +85,10 @@ export async function renderPolishedVideo(input: RenderInput): Promise<void> {
         height: stageHeight,
         zoomFrames: zoomTimeline,
         cursorEffects,
-        motionSamples
+        motionSamples,
+        cursorPngPath: input.cursorPng,
+        cursorHotspotX: input.cursorHotspotX,
+        cursorHotspotY: input.cursorHotspotY
       });
       return;
     } catch (error) {

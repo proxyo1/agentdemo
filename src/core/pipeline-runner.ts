@@ -16,7 +16,9 @@ export async function runPipeline(rawOptions: unknown): Promise<void> {
       url: options.url,
       tempDir,
       startupWaitMs: options.startupWaitMs,
-      tailWaitMs: options.tailWaitMs
+      tailWaitMs: options.tailWaitMs,
+      actionDelayMs: options.actionDelayMs,
+      typeCharDelayMs: options.typeCharDelayMs
     });
 
     logger.info("Rendering final mp4...");
@@ -26,7 +28,10 @@ export async function runPipeline(rawOptions: unknown): Promise<void> {
       outputPath: options.out,
       fps: options.fps,
       interpolate: options.interpolate,
-      composite: options.composite
+      composite: options.composite,
+      cursorPng: options.cursorPng,
+      cursorHotspotX: options.cursorHotspotX,
+      cursorHotspotY: options.cursorHotspotY
     });
     logger.info(`Done: ${options.out}`);
   } finally {

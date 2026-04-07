@@ -1,5 +1,5 @@
 import { readdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import { execa } from "execa";
 import { makeTempDir, removeDir } from "../../core/fs-utils.js";
 import { logger } from "../../core/logger.js";
@@ -7,6 +7,7 @@ import { activeRipplesAtTime, interpolateCursorAtTime } from "../cursor/interpol
 import type { CursorEffectsTimeline } from "../cursor/effects.js";
 import type { MotionSample } from "../zoom/motion.js";
 import type { ZoomFrame } from "../zoom/timeline.js";
+import { defaultCursorPngPath, tryLoadCursorPng } from "./cursor-asset.js";
 import { drawCompositedFrame } from "./draw-frame.js";
 
 function naturalPngSort(a: string, b: string): number {
@@ -30,6 +31,10 @@ export interface RenderCompositeParams {
   zoomFrames: ZoomFrame[];
   cursorEffects: CursorEffectsTimeline;
   motionSamples: MotionSample[];
+  /** Absolute or relative path; default `assets/cursor.png` under package root. */
+  cursorPngPath?: string;
+  cursorHotspotX?: number;
+  cursorHotspotY?: number;
 }
 
 export async function renderCompositeMp4(params: RenderCompositeParams): Promise<void> {
@@ -55,6 +60,18 @@ export async function renderCompositeMp4(params: RenderCompositeParams): Promise
     const total = extracted.length;
     logger.info(`Compositing ${total} frames (camera zoom, cursor, ripples)...`);
 
+    const cursorPath = params.cursorPngPath
+      ? isAbsolute(params.cursorPngPath)
+        ? params.cursorPngPath
+        : join(process.cwd(), params.cursorPngPath)
+      : defaultCursorPngPath();
+    const cursorImage = await tryLoadCursorPng(cursorPath);
+    if (cursorImage) {
+      logger.info(`Using cursor PNG: ${cursorPath}`);
+    } else {
+      logger.info("No cursor PNG found at assets/cursor.png; using built-in vector cursor.");
+    }
+
     for (let i = 0; i < total; i += 1) {
       const timeMs = i * frameMs;
       const zi = Math.min(i, Math.max(0, params.zoomFrames.length - 1));
@@ -76,7 +93,10 @@ export async function renderCompositeMp4(params: RenderCompositeParams): Promise
         transform: zf.transform,
         cursor,
         ripples,
-        motionBlurAmount: motion?.blurAmount ?? 0
+        motionBlurAmount: motion?.blurAmount ?? 0,
+        cursorImage,
+        cursorHotspotX: params.cursorHotspotX,
+        cursorHotspotY: params.cursorHotspotY
       });
 
       const outName = `comp_${String(i + 1).padStart(6, "0")}.png`;

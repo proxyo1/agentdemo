@@ -11,10 +11,17 @@ Steps:
    - `({ page, actions }) => Promise<void>`
 4. Use `actions.*` wrappers for interactions.
 5. Ensure selectors are resilient and deterministic.
+6. Structure the script into semantic steps with settling between major actions.
 
 Constraints:
-- No random waits.
+- No long/random waits.
 - No network mocking.
 - Keep execution under 60 seconds.
+- After major actions (navigation, modal open, submit), use deterministic settling:
+  - `waitForLoadState("networkidle")` for route transitions,
+  - visibility/hidden checks for dynamic UI,
+  - optional short showcase pause (300-700ms) to improve demo readability.
+- Prefer stability-first selectors:
+  - `getByRole`, `getByLabel`, `getByTestId`, then text fallback.
 
 Return only the script code.

@@ -2,6 +2,11 @@ import { performance } from "node:perf_hooks";
 import type { Locator } from "playwright";
 import type { CoordEvent, LoggedActions } from "./types.js";
 
+interface ActionPacing {
+  actionDelayMs: number;
+  typeCharDelayMs: number;
+}
+
 async function centerOf(locator: Locator): Promise<{ x: number; y: number }> {
   const box = await locator.boundingBox();
   if (!box) {
@@ -10,7 +15,12 @@ async function centerOf(locator: Locator): Promise<{ x: number; y: number }> {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
-export function createLoggedActions(events: CoordEvent[]): LoggedActions {
+function sleep(ms: number): Promise<void> {
+  if (ms <= 0) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function createLoggedActions(events: CoordEvent[], pacing: ActionPacing): LoggedActions {
   const start = performance.now();
   const now = () => Math.max(0, Math.round(performance.now() - start));
 
@@ -23,18 +33,23 @@ export function createLoggedActions(events: CoordEvent[]): LoggedActions {
     async hover(locator) {
       await push("hover", locator);
       await locator.hover();
+      await sleep(pacing.actionDelayMs);
     },
     async click(locator) {
       await push("click", locator);
       await locator.click();
+      await sleep(pacing.actionDelayMs);
     },
     async dblclick(locator) {
       await push("dblclick", locator, { clickCount: 2 });
       await locator.dblclick();
+      await sleep(pacing.actionDelayMs);
     },
     async type(locator, text) {
       await push("type", locator, { chars: text.length });
-      await locator.fill(text);
+      await locator.click();
+      await locator.pressSequentially(text, { delay: pacing.typeCharDelayMs });
+      await sleep(pacing.actionDelayMs);
     }
   };
 }
