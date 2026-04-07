@@ -1,0 +1,39 @@
+{
+  "name": "autodemo",
+  "version": "0.1.0",
+  "description": "Generate polished local demo videos from Playwright scripts.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "auto-demo": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "capture:example": "tsx playwright/scripts/example-flow.ts",
+    "start": "tsx src/cli/index.ts run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4"
+  },
+  "keywords": [
+    "playwright",
+    "video",
+    "cli",
+    "cursor"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^14.0.3",
+    "execa": "^9.6.1",
+    "ffmpeg-static": "^5.3.0",
+    "jiti": "^2.6.1",
+    "pixi.js": "^8.17.1",
+    "playwright": "^1.59.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}
