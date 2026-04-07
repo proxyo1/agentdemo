@@ -1,5 +1,10 @@
 import type { ClickRipple, CursorKeyframe } from "./effects.js";
 
+function smoothstep(t: number): number {
+  const c = Math.max(0, Math.min(1, t));
+  return c * c * (3 - 2 * c);
+}
+
 export function interpolateCursorAtTime(keyframes: CursorKeyframe[], t: number): CursorKeyframe | null {
   if (keyframes.length === 0) return null;
   if (t <= keyframes[0].t) return keyframes[0];
@@ -18,12 +23,31 @@ export function interpolateCursorAtTime(keyframes: CursorKeyframe[], t: number):
   const b = keyframes[hi];
   const span = b.t - a.t;
   const u = span > 0 ? (t - a.t) / span : 0;
+  const eased = smoothstep(u);
+  const baseX = a.x + (b.x - a.x) * eased;
+  const baseY = a.y + (b.y - a.y) * eased;
+
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const segmentLen = Math.sqrt(dx * dx + dy * dy);
+  let arcX = 0;
+  let arcY = 0;
+  if (segmentLen > 10) {
+    const nx = -dy / segmentLen;
+    const ny = dx / segmentLen;
+    const dirSign = lo % 2 === 0 ? 1 : -1;
+    const amplitude = Math.min(14, Math.max(1.5, segmentLen * 0.05));
+    const arc = Math.sin(Math.PI * u) * amplitude * dirSign;
+    arcX = nx * arc;
+    arcY = ny * arc;
+  }
+
   return {
     t,
-    x: a.x + (b.x - a.x) * u,
-    y: a.y + (b.y - a.y) * u,
+    x: baseX + arcX,
+    y: baseY + arcY,
     visible: true,
-    scale: a.scale + (b.scale - a.scale) * u
+    scale: a.scale + (b.scale - a.scale) * eased
   };
 }
 

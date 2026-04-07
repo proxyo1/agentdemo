@@ -54,3 +54,28 @@ npx auto-demo run \
   --tail-wait-ms 3000 \
   --action-delay-ms 450 \
   --type-char-delay-ms 45
+```
+
+7. Verify output:
+   - Confirm the final `mp4` exists at the requested output path.
+   - If export fails, report the exact blocking step and command error.
+
+## Script Authoring Rules (Important)
+
+When authoring `.autodemo/demo-flow.ts`, optimize for realistic camera framing and user-like behavior:
+
+- Keep a `settle()` helper and call it after each meaningful interaction.
+- Use a `step()` helper that includes a short hold (`~350-600ms`) so state changes are visible.
+- Avoid long chains of top-nav clicks without viewport interaction.
+- After navigation actions that trigger scrolling or section changes, move the cursor into page content (for example: `await actions.hover(page.locator("main").first())`) before the next step.
+- Prefer interaction targets in the visible content area when possible, not only header/nav controls.
+- Keep flow pace human and legible; do not spam rapid actions.
+
+## Quality Bar
+
+- The generated script must be complete and runnable.
+- The produced demo should avoid obvious framing artifacts:
+  - camera hugging only the cursor in nav
+  - abrupt snap-pans
+  - cursor disconnected from scroll/read area
+- If the captured result still looks poor, iterate on script structure (not manual patching in generated output repos) and rerun export.

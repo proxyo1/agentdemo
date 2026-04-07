@@ -2,7 +2,7 @@ import { createCanvas, loadImage, type Image, type SKRSContext2D } from "@napi-r
 import type { ActiveRippleDraw } from "../cursor/interpolate.js";
 import type { AppliedTransform } from "../zoom/transform.js";
 
-const MAX_MOTION_BLUR_PX = 12;
+const MAX_MOTION_BLUR_PX = 4;
 
 /** Letterbox margin around the framed window. */
 function stageMargin(videoW: number, videoH: number): number {
@@ -228,6 +228,19 @@ function clipVideoArea(
   ctx.clip();
 }
 
+function mapContentPoint(
+  contentX: number,
+  contentY: number,
+  transform: AppliedTransform,
+  x: number,
+  y: number
+): { x: number; y: number } {
+  return {
+    x: contentX + transform.x + x * transform.scale,
+    y: contentY + transform.y + y * transform.scale
+  };
+}
+
 export async function drawCompositedFrame(params: {
   framePath: string;
   width: number;
@@ -281,10 +294,11 @@ export async function drawCompositedFrame(params: {
   ctx.restore();
 
   for (const r of params.ripples) {
-    const radius = r.progress * r.maxRadius;
+    const radius = r.progress * r.maxRadius * transform.scale;
     const alpha = (1 - r.progress) * 0.55;
-    const rx = contentX + r.x;
-    const ry = contentY + r.y;
+    const mapped = mapContentPoint(contentX, contentY, transform, r.x, r.y);
+    const rx = mapped.x;
+    const ry = mapped.y;
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.strokeStyle = "rgba(255,255,255,0.95)";
@@ -302,20 +316,21 @@ export async function drawCompositedFrame(params: {
 
   if (params.cursor) {
     const { x, y, scale } = params.cursor;
-    const tipX = contentX + x;
-    const tipY = contentY + y;
+    const mapped = mapContentPoint(contentX, contentY, transform, x, y);
+    const tipX = mapped.x;
+    const tipY = mapped.y;
     if (params.cursorImage) {
       drawRasterCursor(
         ctx,
         params.cursorImage,
         tipX,
         tipY,
-        scale,
+        scale * transform.scale,
         params.cursorHotspotX ?? 4,
         params.cursorHotspotY ?? 2
       );
     } else {
-      drawMacCursor(ctx, tipX, tipY, scale);
+      drawMacCursor(ctx, tipX, tipY, scale * transform.scale);
     }
   }
 

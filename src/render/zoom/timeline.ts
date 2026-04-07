@@ -40,6 +40,27 @@ function activeStrengthAt(t: number, regions: ReturnType<typeof buildZoomRegions
   return Math.max(0, Math.min(1, strength));
 }
 
+function blendFocus(a: ZoomFocus, b: ZoomFocus, t: number): ZoomFocus {
+  return {
+    cx: a.cx + (b.cx - a.cx) * t,
+    cy: a.cy + (b.cy - a.cy) * t
+  };
+}
+
+function limitFocusStep(next: ZoomFocus, prev: ZoomFocus, maxStep: number): ZoomFocus {
+  const dx = next.cx - prev.cx;
+  const dy = next.cy - prev.cy;
+  const d = Math.sqrt(dx * dx + dy * dy);
+  if (d <= maxStep || d <= 0.00001) {
+    return next;
+  }
+  const k = maxStep / d;
+  return {
+    cx: prev.cx + dx * k,
+    cy: prev.cy + dy * k
+  };
+}
+
 export function buildZoomTimeline(params: {
   events: CoordEvent[];
   durationMs: number;
@@ -56,16 +77,25 @@ export function buildZoomTimeline(params: {
 
   for (let t = 0; t <= params.durationMs; t += frameMs) {
     const rawFocus = interpolateCursorAt(telemetry, t) ?? smoothedFocus;
+    const edgeTop = clamp01((0.24 - rawFocus.cy) / 0.24);
+    const edgeSide = clamp01((Math.abs(rawFocus.cx - 0.5) - 0.34) / 0.16);
+    const revealTarget: ZoomFocus = { cx: 0.5, cy: 0.5 };
+    const active = activeStrengthAt(t, regions);
+    // De-tether framing from strict cursor following for top-nav interactions.
+    // This keeps resulting UI changes in-frame after clicks.
+    const contextualBlend = clamp01(active * 0.18 + edgeTop * 0.34 + edgeSide * 0.12);
+    const guidedFocus = blendFocus(rawFocus, revealTarget, contextualBlend);
     const smoothFactor = adaptiveSmoothFactor(
-      rawFocus,
+      guidedFocus,
       smoothedFocus,
       AUTO_FOLLOW_SMOOTHING_FACTOR,
       AUTO_FOLLOW_SMOOTHING_FACTOR_MAX,
       AUTO_FOLLOW_RAMP_DISTANCE
     );
-    smoothedFocus = smoothCursorFocus(rawFocus, smoothedFocus, smoothFactor);
+    const smoothedTarget = smoothCursorFocus(guidedFocus, smoothedFocus, smoothFactor);
+    // Cap per-frame camera movement to prevent abrupt snaps.
+    smoothedFocus = limitFocusStep(smoothedTarget, smoothedFocus, 0.03);
 
-    const active = activeStrengthAt(t, regions);
     const targetScale = IDLE_ZOOM_SCALE + (ACTIVE_ZOOM_SCALE - IDLE_ZOOM_SCALE) * active;
     if (Math.abs(targetScale - prevScale) > 0.0001) {
       const duration = targetScale > prevScale ? ZOOM_IN_TRANSITION_WINDOW_MS : TRANSITION_WINDOW_MS;

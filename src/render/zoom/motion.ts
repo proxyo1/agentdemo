@@ -7,9 +7,9 @@ export interface MotionSample {
   blurAmount: number;
 }
 
-const PEAK_VELOCITY = 1400;
-const VELOCITY_THRESHOLD = 12;
-const MAX_BLUR = 1;
+const PEAK_VELOCITY = 2200;
+const VELOCITY_THRESHOLD = 90;
+const MAX_BLUR = 0.42;
 
 export function buildMotionSamples(frames: ZoomFrame[]): MotionSample[] {
   if (frames.length === 0) return [];
@@ -20,10 +20,12 @@ export function buildMotionSamples(frames: ZoomFrame[]): MotionSample[] {
     const dt = Math.max(1, curr.t - prev.t) / 1000;
     const dx = curr.transform.x - prev.transform.x;
     const dy = curr.transform.y - prev.transform.y;
-    const ds = Math.abs(curr.transform.scale - prev.transform.scale) * 900;
+    // Scale-only transitions (especially zoom-out) were causing harsh full-frame blur spikes.
+    // Only apply a reduced contribution for zoom-in movement.
+    const ds = Math.max(0, curr.transform.scale - prev.transform.scale) * 420;
     const v = Math.sqrt((dx / dt) ** 2 + (dy / dt) ** 2) + ds / dt;
     const n = Math.min(1, v / PEAK_VELOCITY);
-    const blurAmount = v < VELOCITY_THRESHOLD ? 0 : Math.min(MAX_BLUR, n * n);
+    const blurAmount = v < VELOCITY_THRESHOLD ? 0 : Math.min(MAX_BLUR, n * n * 0.75);
     out.push({ t: curr.t, velocity: v, blurAmount });
   }
   return out;
