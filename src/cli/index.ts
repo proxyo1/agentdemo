@@ -19,6 +19,17 @@ program
   .option("--tail-wait-ms <number>", "Extra wait before stopping recording", "3000")
   .option("--action-delay-ms <number>", "Delay after each scripted action", "450")
   .option("--type-char-delay-ms <number>", "Delay per typed character", "45")
+  .option(
+    "--micro-pause-min-ms <number>",
+    "Min idle ms after cursor reaches target before click/type (humanization)",
+    "100"
+  )
+  .option(
+    "--micro-pause-max-ms <number>",
+    "Max idle ms after cursor reaches target before click/type (humanization)",
+    "300"
+  )
+  .option("--humanize-seed <number>", "Seed for deterministic micro-pause randomness", "1")
   .option("--no-composite", "Skip pixel compositing (faster; ffmpeg transcode only)")
   .option("--cursor-png <path>", "Path to cursor PNG (default: assets/cursor.png in repo root)")
   .option("--cursor-hotspot-x <n>", "Cursor hot spot X in PNG pixels", "4")

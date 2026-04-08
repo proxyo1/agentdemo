@@ -18,7 +18,10 @@ export async function runPipeline(rawOptions: unknown): Promise<void> {
       startupWaitMs: options.startupWaitMs,
       tailWaitMs: options.tailWaitMs,
       actionDelayMs: options.actionDelayMs,
-      typeCharDelayMs: options.typeCharDelayMs
+      typeCharDelayMs: options.typeCharDelayMs,
+      microPauseMinMs: options.microPauseMinMs,
+      microPauseMaxMs: options.microPauseMaxMs,
+      humanizeSeed: options.humanizeSeed
     });
 
     logger.info("Rendering final mp4...");

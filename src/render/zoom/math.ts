@@ -42,3 +42,9 @@ export function cubicBezier(x1: number, y1: number, x2: number, y2: number, t: n
 export function easeOutScreenStudio(t: number) {
   return cubicBezier(0.16, 1, 0.3, 1, t);
 }
+
+/** Symmetric ease for camera pan acceleration / deceleration. */
+export function easeInOutCubic(t: number) {
+  const u = clamp01(t);
+  return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+}

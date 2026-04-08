@@ -1,9 +1,5 @@
 import type { ClickRipple, CursorKeyframe } from "./effects.js";
-
-function smoothstep(t: number): number {
-  const c = Math.max(0, Math.min(1, t));
-  return c * c * (3 - 2 * c);
-}
+import { easeInOutCubic } from "../zoom/math.js";
 
 export function interpolateCursorAtTime(keyframes: CursorKeyframe[], t: number): CursorKeyframe | null {
   if (keyframes.length === 0) return null;
@@ -23,7 +19,8 @@ export function interpolateCursorAtTime(keyframes: CursorKeyframe[], t: number):
   const b = keyframes[hi];
   const span = b.t - a.t;
   const u = span > 0 ? (t - a.t) / span : 0;
-  const eased = smoothstep(u);
+  /** Ease-in-out along the segment so speed is low at takeoff/landing (human-like hand motion). */
+  const eased = easeInOutCubic(u);
   const baseX = a.x + (b.x - a.x) * eased;
   const baseY = a.y + (b.y - a.y) * eased;
 

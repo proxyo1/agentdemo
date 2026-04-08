@@ -1,6 +1,7 @@
 import type { Locator, Page } from "playwright";
 
-export type ActionType = "hover" | "click" | "dblclick" | "type";
+/** `position` = same-point cursor sample for camera path only (no zoom anchor, no ripples). */
+export type ActionType = "hover" | "click" | "dblclick" | "type" | "position";
 
 export interface CoordEvent {
   t: number;

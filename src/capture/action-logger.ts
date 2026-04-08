@@ -5,6 +5,9 @@ import type { CoordEvent, LoggedActions } from "./types.js";
 interface ActionPacing {
   actionDelayMs: number;
   typeCharDelayMs: number;
+  microPauseMinMs: number;
+  microPauseMaxMs: number;
+  humanizeSeed: number;
 }
 
 async function centerOf(locator: Locator): Promise<{ x: number; y: number }> {
@@ -20,36 +23,67 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/** Deterministic PRNG for reproducible “random” micro-pauses between runs. */
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), a | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function randomIntInclusive(rng: () => number, min: number, max: number): number {
+  if (max <= min) return min;
+  return min + Math.floor(rng() * (max - min + 1));
+}
+
 export function createLoggedActions(events: CoordEvent[], pacing: ActionPacing): LoggedActions {
   const start = performance.now();
   const now = () => Math.max(0, Math.round(performance.now() - start));
+  const rng = mulberry32(pacing.humanizeSeed);
 
-  async function push(type: CoordEvent["type"], locator: Locator, detail?: CoordEvent["detail"]) {
-    const { x, y } = await centerOf(locator);
-    events.push({ t: now(), type, x, y, detail });
-  }
+  const microPauseMs = () =>
+    randomIntInclusive(rng, pacing.microPauseMinMs, pacing.microPauseMaxMs);
 
   return {
     async hover(locator) {
-      await push("hover", locator);
       await locator.hover();
+      const { x, y } = await centerOf(locator);
+      events.push({ t: now(), type: "hover", x, y });
       await sleep(pacing.actionDelayMs);
     },
     async click(locator) {
-      await push("click", locator);
+      await locator.hover();
+      const { x, y } = await centerOf(locator);
+      events.push({ t: now(), type: "position", x, y });
+      await sleep(microPauseMs());
+      events.push({ t: now(), type: "click", x, y });
       await locator.click();
       await sleep(pacing.actionDelayMs);
     },
     async dblclick(locator) {
-      await push("dblclick", locator, { clickCount: 2 });
+      await locator.hover();
+      const { x, y } = await centerOf(locator);
+      events.push({ t: now(), type: "position", x, y });
+      await sleep(microPauseMs());
+      events.push({ t: now(), type: "dblclick", x, y, detail: { clickCount: 2 } });
       await locator.dblclick();
       await sleep(pacing.actionDelayMs);
     },
     async type(locator, text) {
-      await push("type", locator, { chars: text.length });
+      await locator.hover();
+      const { x, y } = await centerOf(locator);
+      events.push({ t: now(), type: "position", x, y });
+      await sleep(microPauseMs());
+      events.push({ t: now(), type: "type", x, y, detail: { chars: text.length } });
       await locator.click();
       await locator.pressSequentially(text, { delay: pacing.typeCharDelayMs });
-      await sleep(pacing.actionDelayMs);
+      // Hold camera focus on the field until typing (and a short read beat) finish; otherwise the
+      // zoom path interpolates toward the next click for the whole pressSequentially duration.
+      await sleep(Math.max(pacing.actionDelayMs, 450));
+      events.push({ t: now(), type: "position", x, y });
     }
   };
 }

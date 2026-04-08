@@ -1,16 +1,17 @@
 import type { CoordEvent } from "../../capture/types.js";
 import {
   ACTIVE_ZOOM_SCALE,
-  AUTO_FOLLOW_RAMP_DISTANCE,
-  AUTO_FOLLOW_SMOOTHING_FACTOR,
-  AUTO_FOLLOW_SMOOTHING_FACTOR_MAX,
+  CAMERA_EASE_IN_FRAMES,
+  CAMERA_EASE_OUT_NEAR,
+  CAMERA_GUIDED_JUMP_THRESHOLD,
+  CAMERA_PAN_MAX_SPEED,
   DEFAULT_FOCUS,
   IDLE_ZOOM_SCALE,
   TRANSITION_WINDOW_MS,
   ZOOM_IN_TRANSITION_WINDOW_MS
 } from "./constants.js";
-import { adaptiveSmoothFactor, clampFocusToScale, interpolateCursorAt, smoothCursorFocus, type CursorPoint, type ZoomFocus } from "./focus.js";
-import { clamp01, easeOutScreenStudio } from "./math.js";
+import { clampFocusToScale, interpolateCursorAt, type CursorPoint, type ZoomFocus } from "./focus.js";
+import { clamp01, easeInOutCubic, easeOutScreenStudio } from "./math.js";
 import { buildZoomRegions, computeRegionStrength } from "./regions.js";
 import { computeZoomTransform, type AppliedTransform } from "./transform.js";
 
@@ -47,17 +48,36 @@ function blendFocus(a: ZoomFocus, b: ZoomFocus, t: number): ZoomFocus {
   };
 }
 
-function limitFocusStep(next: ZoomFocus, prev: ZoomFocus, maxStep: number): ZoomFocus {
-  const dx = next.cx - prev.cx;
-  const dy = next.cy - prev.cy;
-  const d = Math.sqrt(dx * dx + dy * dy);
-  if (d <= maxStep || d <= 0.00001) {
-    return next;
+function focusDistance(a: ZoomFocus, b: ZoomFocus): number {
+  const dx = a.cx - b.cx;
+  const dy = a.cy - b.cy;
+  return Math.hypot(dx, dy);
+}
+
+/**
+ * Chase `to` from `from` with a max speed in normalized stage units/sec, independent of how fast
+ * underlying telemetry steps (avoids one-frame teleports when ROI jumps, e.g. modal + email field).
+ */
+function panTowardCinematic(
+  from: ZoomFocus,
+  to: ZoomFocus,
+  dtSec: number,
+  maxSpeed: number,
+  easeInMul: number
+): ZoomFocus {
+  const dx = to.cx - from.cx;
+  const dy = to.cy - from.cy;
+  const dist = Math.hypot(dx, dy);
+  if (dist < 1e-7) {
+    return { cx: to.cx, cy: to.cy };
   }
-  const k = maxStep / d;
+  const easeOutMul = 0.4 + 0.6 * clamp01(dist / Math.max(0.02, CAMERA_EASE_OUT_NEAR));
+  const maxTravel = maxSpeed * dtSec * easeInMul * easeOutMul;
+  const step = Math.min(dist, maxTravel);
+  const k = step / dist;
   return {
-    cx: prev.cx + dx * k,
-    cy: prev.cy + dy * k
+    cx: from.cx + dx * k,
+    cy: from.cy + dy * k
   };
 }
 
@@ -74,27 +94,37 @@ export function buildZoomTimeline(params: {
   const frames: ZoomFrame[] = [];
   let smoothedFocus: ZoomFocus = DEFAULT_FOCUS;
   let prevScale = IDLE_ZOOM_SCALE;
+  let prevGuided: ZoomFocus = { ...DEFAULT_FOCUS };
+  let easeInFramesRemaining = 0;
 
   for (let t = 0; t <= params.durationMs; t += frameMs) {
     const rawFocus = interpolateCursorAt(telemetry, t) ?? smoothedFocus;
     const edgeTop = clamp01((0.24 - rawFocus.cy) / 0.24);
     const edgeSide = clamp01((Math.abs(rawFocus.cx - 0.5) - 0.34) / 0.16);
-    const revealTarget: ZoomFocus = { cx: 0.5, cy: 0.5 };
+    // Slight left bias when interacting with the top band so left rails (filters, nav) stay visible.
+    const revealTarget: ZoomFocus = {
+      cx: edgeTop > 0.12 ? 0.46 : 0.5,
+      cy: 0.5
+    };
     const active = activeStrengthAt(t, regions);
     // De-tether framing from strict cursor following for top-nav interactions.
     // This keeps resulting UI changes in-frame after clicks.
-    const contextualBlend = clamp01(active * 0.18 + edgeTop * 0.34 + edgeSide * 0.12);
+    const contextualBlend = clamp01(active * 0.26 + edgeTop * 0.42 + edgeSide * 0.18);
     const guidedFocus = blendFocus(rawFocus, revealTarget, contextualBlend);
-    const smoothFactor = adaptiveSmoothFactor(
-      guidedFocus,
-      smoothedFocus,
-      AUTO_FOLLOW_SMOOTHING_FACTOR,
-      AUTO_FOLLOW_SMOOTHING_FACTOR_MAX,
-      AUTO_FOLLOW_RAMP_DISTANCE
-    );
-    const smoothedTarget = smoothCursorFocus(guidedFocus, smoothedFocus, smoothFactor);
-    // Cap per-frame camera movement to prevent abrupt snaps.
-    smoothedFocus = limitFocusStep(smoothedTarget, smoothedFocus, 0.03);
+
+    if (focusDistance(guidedFocus, prevGuided) > CAMERA_GUIDED_JUMP_THRESHOLD) {
+      easeInFramesRemaining = Math.max(easeInFramesRemaining, CAMERA_EASE_IN_FRAMES);
+    }
+    prevGuided = guidedFocus;
+
+    const easeInMul =
+      easeInFramesRemaining > 0
+        ? 0.22 + 0.78 * easeInOutCubic((CAMERA_EASE_IN_FRAMES - easeInFramesRemaining) / CAMERA_EASE_IN_FRAMES)
+        : 1;
+    easeInFramesRemaining = Math.max(0, easeInFramesRemaining - 1);
+
+    const dtSec = frameMs / 1000;
+    smoothedFocus = panTowardCinematic(smoothedFocus, guidedFocus, dtSec, CAMERA_PAN_MAX_SPEED, easeInMul);
 
     const targetScale = IDLE_ZOOM_SCALE + (ACTIVE_ZOOM_SCALE - IDLE_ZOOM_SCALE) * active;
     if (Math.abs(targetScale - prevScale) > 0.0001) {

@@ -16,6 +16,9 @@ interface RecordInput {
   tailWaitMs: number;
   actionDelayMs: number;
   typeCharDelayMs: number;
+  microPauseMinMs: number;
+  microPauseMaxMs: number;
+  humanizeSeed: number;
 }
 
 async function loadDemoScript(scriptPath: string): Promise<DemoScript> {
@@ -93,7 +96,10 @@ export async function recordSession(input: RecordInput): Promise<CaptureArtifact
       const script = await loadDemoScript(input.scriptPath);
       const actions = createLoggedActions(events, {
         actionDelayMs: input.actionDelayMs,
-        typeCharDelayMs: input.typeCharDelayMs
+        typeCharDelayMs: input.typeCharDelayMs,
+        microPauseMinMs: input.microPauseMinMs,
+        microPauseMaxMs: input.microPauseMaxMs,
+        humanizeSeed: input.humanizeSeed
       });
 
       await page.goto(input.url);

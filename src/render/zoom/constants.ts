@@ -2,10 +2,17 @@
 export const DEFAULT_FOCUS = { cx: 0.5, cy: 0.5 };
 export const TRANSITION_WINDOW_MS = 1015.05;
 export const ZOOM_IN_TRANSITION_WINDOW_MS = TRANSITION_WINDOW_MS * 1.5;
-export const AUTO_FOLLOW_SMOOTHING_FACTOR = 0.1;
-export const AUTO_FOLLOW_SMOOTHING_FACTOR_MAX = 0.25;
-export const AUTO_FOLLOW_RAMP_DISTANCE = 0.15;
+
+/** Stage-normalized units per second (0–1). Caps how fast the virtual camera can pan; decouples from DOM event spacing. */
+export const CAMERA_PAN_MAX_SPEED = 0.33;
+/** When guided focus jumps farther than this in one frame, ease-in pan speed from rest (modal open, etc.). */
+export const CAMERA_GUIDED_JUMP_THRESHOLD = 0.092;
+/** Frames over which pan speed ramps up after a guided jump (~ease-in). */
+export const CAMERA_EASE_IN_FRAMES = 22;
+/** Normalized distance below which pan slows for a soft landing (ease-out). */
+export const CAMERA_EASE_OUT_NEAR = 0.1;
 
 export const IDLE_ZOOM_SCALE = 1.0;
-export const ACTIVE_ZOOM_SCALE = 1.25;
+/** Lower = more UI (sidebars, full search bar) stays in frame during zoom. */
+export const ACTIVE_ZOOM_SCALE = 1.12;
 export const ACTIVE_WINDOW_MS = 1200;
