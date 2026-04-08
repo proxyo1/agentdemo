@@ -3,16 +3,24 @@
   "version": "0.1.0",
   "description": "Generate polished local demo videos from Playwright scripts.",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/cli/index.js",
   "bin": {
     "agentdemo": "dist/cli/index.js"
   },
+  "files": [
+    "dist",
+    "assets/cursor.png",
+    "assets/README.md",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/cli/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "capture:example": "tsx playwright/scripts/example-flow.ts",
-    "start": "tsx src/cli/index.ts run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4"
+    "start": "tsx src/cli/index.ts run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4",
+    "prepublishOnly": "npm run build && npm run typecheck"
   },
   "keywords": [
     "playwright",
@@ -20,8 +28,19 @@
     "cli",
     "cursor"
   ],
-  "author": "",
+  "author": "Ryan",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/proxyo1/agentdemo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/proxyo1/agentdemo/issues"
+  },
+  "homepage": "https://github.com/proxyo1/agentdemo#readme",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.97",
     "commander": "^14.0.3",
