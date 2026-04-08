@@ -10,9 +10,9 @@ export async function ensureDir(path: string): Promise<void> {
  * Windows Defender and Search often lock files under %TEMP% while Playwright/ffmpeg finalize WebM.
  * Prefer a workspace under the project (typically already excluded or less aggressively scanned).
  */
-export async function makeTempDir(prefix = "autodemo-"): Promise<string> {
+export async function makeTempDir(prefix = "agentdemo-"): Promise<string> {
   if (process.platform === "win32") {
-    const underProject = join(process.cwd(), "node_modules", ".cache", "autodemo-workspaces");
+    const underProject = join(process.cwd(), "node_modules", ".cache", "agentdemo-workspaces");
     try {
       await mkdir(underProject, { recursive: true });
       return mkdtemp(join(underProject, prefix));

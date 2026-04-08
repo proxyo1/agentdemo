@@ -1,4 +1,4 @@
-// Adapted from OpenScreen (MIT): zoomRegionUtils.ts (simplified for AutoDemo)
+// Adapted from OpenScreen (MIT): zoomRegionUtils.ts (simplified for AgentDemo)
 import type { CoordEvent } from "../../capture/types.js";
 
 export interface ZoomRegion {

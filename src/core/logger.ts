@@ -1,11 +1,11 @@
 export const logger = {
   info(message: string): void {
-    console.log(`[auto-demo] ${message}`);
+    console.log(`[agentdemo] ${message}`);
   },
   warn(message: string): void {
-    console.warn(`[auto-demo] ${message}`);
+    console.warn(`[agentdemo] ${message}`);
   },
   error(message: string): void {
-    console.error(`[auto-demo] ${message}`);
+    console.error(`[agentdemo] ${message}`);
   }
 };

@@ -15,7 +15,7 @@ Adapted modules:
 - `src/lib/exporter/videoExporter.ts` (resilience patterns)
 - `src/lib/exporter/streamingDecoder.ts` (resilience patterns)
 
-AutoDemo uses adapted logic for:
+AgentDemo uses adapted logic for:
 
 - cursor interpolation/smoothing
 - focus clamping

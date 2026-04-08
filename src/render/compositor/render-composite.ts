@@ -43,8 +43,8 @@ export interface RenderCompositeParams {
 }
 
 export async function renderCompositeMp4(params: RenderCompositeParams): Promise<void> {
-  const tempIn = await makeTempDir("autodemo-in-");
-  const tempOut = await makeTempDir("autodemo-out-");
+  const tempIn = await makeTempDir("agentdemo-in-");
+  const tempOut = await makeTempDir("agentdemo-out-");
 
   try {
     await execa(params.ffmpegPath, [

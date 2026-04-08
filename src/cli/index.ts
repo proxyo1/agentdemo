@@ -6,7 +6,7 @@ import { logger } from "../core/logger.js";
 import { scaffoldDemoScript } from "../integrations/demo-flow/scaffold.js";
 
 const program = new Command();
-program.name("auto-demo").description("Record and render local demo videos.");
+program.name("agentdemo").description("Record and render local demo videos.");
 
 program
   .command("run")
@@ -49,7 +49,7 @@ program
 program
   .command("scaffold")
   .description("Write a starter DemoScript file for a custom user flow")
-  .option("--out <path>", "Output path for the new script", ".autodemo/tmp/demo-flow.ts")
+  .option("--out <path>", "Output path for the new script", ".agentdemo/tmp/demo-flow.ts")
   .action(async (options) => {
     try {
       const out = resolve(options.out);

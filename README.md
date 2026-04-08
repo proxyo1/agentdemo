@@ -1,25 +1,25 @@
-# AutoDemo
+# AgentDemo
 
-AutoDemo creates polished demo videos of local web app flows using Playwright capture plus cinematic compositing (camera zoom, synthetic cursor, click ripples).
+AgentDemo creates polished demo videos of local web app flows using Playwright capture plus cinematic compositing (camera zoom, synthetic cursor, click ripples).
 
 ## Quick Start (Agent-First)
 
-Use this package through Cursor+ the AutoDemo skill. The user experience should be:
+Use this package through Cursor+ the AgentDemo skill. The user experience should be:
 
-1. Install AutoDemo in your app repo.
-2. Install the AutoDemo skill.
+1. Install AgentDemo in your app repo.
+2. Install the AgentDemo skill.
 3. Ask the agent what flow to demo.
-4. Agent generates the script, runs AutoDemo, and returns the output video path.
+4. Agent generates the script, runs AgentDemo, and returns the output video path.
 
 ### 1) Install in your app repo
 
 ```bash
-npm install autodemo (in the works)
+npm install agentdemo (in the works)
 ```
 
 ### 2) Install the skill
 
-Add the AutoDemo skill in your Cursor setup for that repo.
+Add the AgentDemo skill in your Cursor setup for that repo.
 
 ### 3) Ask the agent
 
@@ -31,9 +31,9 @@ The agent should handle defaults automatically:
 
 - URL: `http://localhost:3000`
 - Output: `demo.mp4`
-- Script path: `.autodemo/demo-flow.ts`
+- Script path: `.agentdemo/demo-flow.ts`
 
-## What AutoDemo Outputs
+## What AgentDemo Outputs
 
 - Final video: `*.mp4`
 - Sidecar timeline/debug data: `*.zoom.json`
@@ -41,7 +41,7 @@ The agent should handle defaults automatically:
 ## Notes
 
 - Compositing is enabled by default (window frame, background, zoom, cursor, ripples).
-- If compositing fails, AutoDemo falls back to ffmpeg transcode.
+- If compositing fails, AgentDemo falls back to ffmpeg transcode.
 - On first run in some environments, Playwright may require browser install (`chromium`).
 
 ## Advanced / Manual CLI (Optional)
@@ -49,10 +49,10 @@ The agent should handle defaults automatically:
 Manual usage is available for debugging and maintainer workflows:
 
 ```bash
-npx auto-demo run --script <path-to-script.ts> --url <local-url> --out <output.mp4>
+npx agentdemo run --script <path-to-script.ts> --url <local-url> --out <output.mp4>
 ```
 
-For AutoDemo source development:
+For AgentDemo source development:
 
 ```bash
 npm run build
@@ -61,7 +61,7 @@ node dist/cli/index.js run --script <path-to-script.ts> --url <local-url> --out 
 
 ## Custom Cursor PNG (Optional)
 
-- Default cursor asset is loaded from `assets/cursor.png` in the AutoDemo package.
+- Default cursor asset is loaded from `assets/cursor.png` in the AgentDemo package.
 - Override with `--cursor-png <path>`.
 - Hotspot defaults to `(4,2)` and can be changed with:
   - `--cursor-hotspot-x <n>`
