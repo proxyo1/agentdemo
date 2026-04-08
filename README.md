@@ -14,7 +14,7 @@ Use this package through Cursor+ the AgentDemo skill. The user experience should
 ### 1) Install in your app repo
 
 ```bash
-npm install agentdemo (in the works)
+npm install agentdemo
 ```
 
 ### 2) Install the skill
