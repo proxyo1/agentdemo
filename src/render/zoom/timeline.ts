@@ -5,7 +5,7 @@ import {
 } from "./constants.js";
 import type { CameraStyleProfile } from "../style-profile.js";
 import { clampFocusToScale, interpolateCursorAt, type CursorPoint, type ZoomFocus } from "./focus.js";
-import { clamp01, easeInOutCubic, easeOutScreenStudio } from "./math.js";
+import { clamp01, easeInOutCubic } from "./math.js";
 import { buildZoomRegions, computeRegionStrength } from "./regions.js";
 import { computeZoomTransform, type AppliedTransform } from "./transform.js";
 
@@ -56,23 +56,21 @@ function panTowardCinematic(
   from: ZoomFocus,
   to: ZoomFocus,
   dtSec: number,
-  maxSpeed: number,
+  panHalfLifeMs: number,
   easeInMul: number,
   easeOutNear: number
 ): ZoomFocus {
-  const dx = to.cx - from.cx;
-  const dy = to.cy - from.cy;
-  const dist = Math.hypot(dx, dy);
-  if (dist < 1e-7) {
+  if (Math.hypot(to.cx - from.cx, to.cy - from.cy) < 1e-7) {
     return { cx: to.cx, cy: to.cy };
   }
-  const easeOutMul = 0.4 + 0.6 * clamp01(dist / Math.max(0.02, easeOutNear));
-  const maxTravel = maxSpeed * dtSec * easeInMul * easeOutMul;
-  const step = Math.min(dist, maxTravel);
-  const k = step / dist;
+  
+  const stiffness = Math.LN2 / (panHalfLifeMs / 1000);
+  const effectiveStiffness = stiffness * easeInMul;
+  const expDecay = Math.exp(-effectiveStiffness * dtSec);
+  
   return {
-    cx: from.cx + dx * k,
-    cy: from.cy + dy * k
+    cx: to.cx - (to.cx - from.cx) * expDecay,
+    cy: to.cy - (to.cy - from.cy) * expDecay
   };
 }
 
@@ -128,18 +126,16 @@ export function buildZoomTimeline(params: {
       smoothedFocus,
       guidedFocus,
       dtSec,
-      params.style.cameraPanMaxSpeed,
+      params.style.cameraPanHalfLifeMs,
       easeInMul,
       params.style.cameraEaseOutNear
     );
 
     const targetScale = IDLE_ZOOM_SCALE + (params.style.activeZoomScale - IDLE_ZOOM_SCALE) * active;
     if (Math.abs(targetScale - prevScale) > 0.0001) {
-      const duration =
-        targetScale > prevScale ? params.style.zoomInTransitionWindowMs : params.style.transitionWindowMs;
-      const transitionProgress = Math.min(1, frameMs / duration);
-      const eased = easeOutScreenStudio(transitionProgress);
-      prevScale = prevScale + (targetScale - prevScale) * eased;
+      // Use framerate-independent exponential smoothing based on zoomHalfLifeMs
+      const stiffness = Math.LN2 / (params.style.zoomHalfLifeMs / 1000);
+      prevScale = targetScale - (targetScale - prevScale) * Math.exp(-stiffness * dtSec);
     } else {
       prevScale = targetScale;
     }

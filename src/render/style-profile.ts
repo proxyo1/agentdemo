@@ -1,9 +1,8 @@
 export type RenderStyle = "polished" | "classic";
 
 export interface CameraStyleProfile {
-  transitionWindowMs: number;
-  zoomInTransitionWindowMs: number;
-  cameraPanMaxSpeed: number;
+  zoomHalfLifeMs: number;
+  cameraPanHalfLifeMs: number;
   cameraGuidedJumpThreshold: number;
   cameraEaseInFrames: number;
   cameraEaseOutNear: number;
@@ -50,9 +49,8 @@ export interface StyleProfile {
 
 const CLASSIC_PROFILE: StyleProfile = {
   camera: {
-    transitionWindowMs: 1015.05,
-    zoomInTransitionWindowMs: 1522.575,
-    cameraPanMaxSpeed: 0.33,
+    zoomHalfLifeMs: 180,
+    cameraPanHalfLifeMs: 120,
     cameraGuidedJumpThreshold: 0.092,
     cameraEaseInFrames: 22,
     cameraEaseOutNear: 0.1,
@@ -90,9 +88,8 @@ const CLASSIC_PROFILE: StyleProfile = {
 
 const POLISHED_PROFILE: StyleProfile = {
   camera: {
-    transitionWindowMs: 1180,
-    zoomInTransitionWindowMs: 1720,
-    cameraPanMaxSpeed: 0.24,
+    zoomHalfLifeMs: 240,
+    cameraPanHalfLifeMs: 160,
     cameraGuidedJumpThreshold: 0.082,
     cameraEaseInFrames: 28,
     cameraEaseOutNear: 0.13,

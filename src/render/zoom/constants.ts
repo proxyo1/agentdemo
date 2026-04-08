@@ -1,10 +1,6 @@
 // Adapted from OpenScreen (MIT): src/components/video-editor/videoPlayback/constants.ts
 export const DEFAULT_FOCUS = { cx: 0.5, cy: 0.5 };
-export const TRANSITION_WINDOW_MS = 1015.05;
-export const ZOOM_IN_TRANSITION_WINDOW_MS = TRANSITION_WINDOW_MS * 1.5;
 
-/** Stage-normalized units per second (0–1). Caps how fast the virtual camera can pan; decouples from DOM event spacing. */
-export const CAMERA_PAN_MAX_SPEED = 0.33;
 /** When guided focus jumps farther than this in one frame, ease-in pan speed from rest (modal open, etc.). */
 export const CAMERA_GUIDED_JUMP_THRESHOLD = 0.092;
 /** Frames over which pan speed ramps up after a guided jump (~ease-in). */
