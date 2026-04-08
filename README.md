@@ -1,55 +1,69 @@
 # AutoDemo
 
-AutoDemo records a local browser flow with Playwright and exports a polished `mp4`.
+AutoDemo creates polished demo videos of local web app flows using Playwright capture plus cinematic compositing (camera zoom, synthetic cursor, click ripples).
 
-## How it works
+## Quick Start (Agent-First)
 
-- You provide a demo script that exports `default async function ({ page, actions }) { ... }`.
-- AutoDemo records interaction coordinates through `actions.*` wrappers.
-- The render pipeline applies cinematic cursor/zoom effects and writes:
-  - Final video: `*.mp4`
-  - Sidecar timeline/debug data: `*.zoom.json`
+Use this package through Cursor+ the AutoDemo skill. The user experience should be:
 
-## Agent-first workflow (recommended)
+1. Install AutoDemo in your app repo.
+2. Install the AutoDemo skill.
+3. Ask the agent what flow to demo.
+4. Agent generates the script, runs AutoDemo, and returns the output video path.
 
-Use the AutoDemo skill in Cursor and ask for a specific user flow.  
-Expected agent behavior:
+### 1) Install in your app repo
 
-- Generate the full script in your repo (no TODO stubs).
-- Run AutoDemo to export the video.
-- Verify the output file exists and report the path.
+```bash
+npm install autodemo (in the works)
+```
 
-## Local development (this repo)
+### 2) Install the skill
 
-1. Install dependencies:
-  - `npm install`
-2. Build:
-  - `npm run build`
-3. Run:
-  - `node dist/cli/index.js run --script <path-to-script.ts> --url <local-url> --out <output.mp4> --fps 60 --startup-wait-ms 2000 --tail-wait-ms 3000 --action-delay-ms 450 --type-char-delay-ms 45`
+Add the AutoDemo skill in your Cursor setup for that repo.
 
-TypeScript entrypoint (without building first):
+### 3) Ask the agent
 
-- `npm run dev -- run --script <path-to-script.ts> --url <local-url> --out <output.mp4>`
+Example prompt pattern:
 
-## CLI commands
+- "Create and export a demo video of login -> open dashboard -> create item -> view details."
 
-- `run` - record and render from a script.
-- `scaffold` - optional stub generator for manual script authoring.
+The agent should handle defaults automatically:
+
+- URL: `http://localhost:3000`
+- Output: `demo.mp4`
+- Script path: `.autodemo/demo-flow.ts`
+
+## What AutoDemo Outputs
+
+- Final video: `*.mp4`
+- Sidecar timeline/debug data: `*.zoom.json`
 
 ## Notes
 
-- Default mode composites zoom/cursor/ripple effects into the MP4.
-- Default render style is `polished` (Screen Studio-like smoothing/treatment).
-- Use `--style classic` (or `--classic`) for legacy behavior.
-- `--no-composite` skips pixel compositing for faster iteration.
-- If compositing fails, CLI falls back to ffmpeg-only transcode/interpolation.
-- Recorder waits for `networkidle`, then applies startup/tail settle windows.
-- Script actions are paced by default (`--action-delay-ms`, `--type-char-delay-ms`).
+- Compositing is enabled by default (window frame, background, zoom, cursor, ripples).
+- If compositing fails, AutoDemo falls back to ffmpeg transcode.
+- On first run in some environments, Playwright may require browser install (`chromium`).
 
-## Custom cursor PNG
+## Advanced / Manual CLI (Optional)
 
-- Use repo default at `assets/cursor.png`, or pass `--cursor-png <path>`.
-- Hot spot defaults to `(4,2)` and can be overridden with:
+Manual usage is available for debugging and maintainer workflows:
+
+```bash
+npx auto-demo run --script <path-to-script.ts> --url <local-url> --out <output.mp4>
+```
+
+For AutoDemo source development:
+
+```bash
+npm run build
+node dist/cli/index.js run --script <path-to-script.ts> --url <local-url> --out <output.mp4>
+```
+
+## Custom Cursor PNG (Optional)
+
+- Default cursor asset is loaded from `assets/cursor.png` in the AutoDemo package.
+- Override with `--cursor-png <path>`.
+- Hotspot defaults to `(4,2)` and can be changed with:
   - `--cursor-hotspot-x <n>`
   - `--cursor-hotspot-y <n>`
+
