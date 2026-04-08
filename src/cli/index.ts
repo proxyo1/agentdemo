@@ -34,6 +34,8 @@ program
   .option("--cursor-png <path>", "Path to cursor PNG (default: assets/cursor.png in repo root)")
   .option("--cursor-hotspot-x <n>", "Cursor hot spot X in PNG pixels", "4")
   .option("--cursor-hotspot-y <n>", "Cursor hot spot Y in PNG pixels", "2")
+  .option("--style <mode>", "Render style profile: polished|classic", "polished")
+  .option("--classic", "Use legacy classic style profile")
   .option("--keep-temp", "Keep temporary artifacts", false)
   .action(async (options) => {
     try {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { RenderStyle } from "../render/style-profile.js";
 
 const cliOptionsSchema = z.object({
   script: z.string().min(1, "Expected --script path"),
@@ -17,6 +18,7 @@ const cliOptionsSchema = z.object({
   cursorPng: z.string().optional(),
   cursorHotspotX: z.coerce.number().int().min(0).max(2048).default(4),
   cursorHotspotY: z.coerce.number().int().min(0).max(2048).default(2),
+  style: z.enum(["polished", "classic"]).default("polished"),
   keepTemp: z.boolean().default(false)
 });
 
@@ -27,10 +29,12 @@ export function parseCliOptions(options: unknown): CliOptions {
   const noComposite = raw.noComposite === true;
   delete raw.noComposite;
   const composite = noComposite ? false : raw.composite !== false;
+  const style: RenderStyle = raw.classic === true ? "classic" : ((raw.style as RenderStyle | undefined) ?? "polished");
+  delete raw.classic;
   if (raw.cursorPng === "" || raw.cursorPng === undefined) {
     delete raw.cursorPng;
   }
-  const parsed = cliOptionsSchema.parse({ ...raw, composite });
+  const parsed = cliOptionsSchema.parse({ ...raw, composite, style });
   if (parsed.microPauseMaxMs < parsed.microPauseMinMs) {
     throw new Error("microPauseMaxMs must be >= microPauseMinMs");
   }

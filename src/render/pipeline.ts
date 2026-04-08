@@ -8,6 +8,7 @@ import { renderCompositeMp4 } from "./compositor/render-composite.js";
 import { buildCursorEffects } from "./cursor/effects.js";
 import { runFfmpegWithFallback } from "./export/ffmpeg-runner.js";
 import { probeVideo } from "./probe.js";
+import { getStyleProfile } from "./style-profile.js";
 import type { RenderInput } from "./types.js";
 import { buildMotionSamples } from "./zoom/motion.js";
 import { buildZoomRegions } from "./zoom/regions.js";
@@ -27,6 +28,8 @@ async function verifyCoords(coordsPath: string): Promise<CoordEvent[]> {
 
 export async function renderPolishedVideo(input: RenderInput): Promise<void> {
   const events = await verifyCoords(input.coordsPath);
+  const styleProfile = getStyleProfile(input.style);
+  const quality = input.style === "polished" ? { primaryCrf: 17, fallbackCrf: 19, preset: "slow" as const } : { primaryCrf: 18, fallbackCrf: 20, preset: "medium" as const };
   await ensureDir(dirname(resolve(input.outputPath)));
 
   let stageWidth = 1440;
@@ -49,16 +52,18 @@ export async function renderPolishedVideo(input: RenderInput): Promise<void> {
     durationMs,
     fps: input.fps,
     stageWidth,
-    stageHeight
+    stageHeight,
+    style: styleProfile.camera
   });
   const zoomRegions = buildZoomRegions(events);
-  const cursorEffects = buildCursorEffects(events);
-  const motionSamples = buildMotionSamples(zoomTimeline);
+  const cursorEffects = buildCursorEffects(events, styleProfile.cursor);
+  const motionSamples = buildMotionSamples(zoomTimeline, styleProfile.motion);
   await writeFile(
     `${input.outputPath}.zoom.json`,
     JSON.stringify(
       {
         layers: ["background", "video", "cameraZoom", "syntheticCursor", "clickRipples"],
+        style: input.style,
         zoom: { frames: zoomTimeline, regions: zoomRegions },
         cursor: cursorEffects,
         motion: motionSamples
@@ -88,7 +93,11 @@ export async function renderPolishedVideo(input: RenderInput): Promise<void> {
         motionSamples,
         cursorPngPath: input.cursorPng,
         cursorHotspotX: input.cursorHotspotX,
-        cursorHotspotY: input.cursorHotspotY
+        cursorHotspotY: input.cursorHotspotY,
+        style: styleProfile.frame,
+        cursorStyle: styleProfile.cursor,
+        crf: quality.primaryCrf,
+        preset: quality.preset
       });
       return;
     } catch (error) {
@@ -103,6 +112,9 @@ export async function renderPolishedVideo(input: RenderInput): Promise<void> {
     inputPath: input.rawVideoPath,
     outputPath: input.outputPath,
     fps: input.fps,
-    interpolate: input.interpolate
+    interpolate: input.interpolate,
+    primaryCrf: quality.primaryCrf,
+    fallbackCrf: quality.fallbackCrf,
+    primaryPreset: quality.preset
   });
 }

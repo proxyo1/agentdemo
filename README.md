@@ -40,6 +40,8 @@ TypeScript entrypoint (without building first):
 ## Notes
 
 - Default mode composites zoom/cursor/ripple effects into the MP4.
+- Default render style is `polished` (Screen Studio-like smoothing/treatment).
+- Use `--style classic` (or `--classic`) for legacy behavior.
 - `--no-composite` skips pixel compositing for faster iteration.
 - If compositing fails, CLI falls back to ffmpeg-only transcode/interpolation.
 - Recorder waits for `networkidle`, then applies startup/tail settle windows.

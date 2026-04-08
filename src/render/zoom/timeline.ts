@@ -1,15 +1,9 @@
 import type { CoordEvent } from "../../capture/types.js";
 import {
-  ACTIVE_ZOOM_SCALE,
-  CAMERA_EASE_IN_FRAMES,
-  CAMERA_EASE_OUT_NEAR,
-  CAMERA_GUIDED_JUMP_THRESHOLD,
-  CAMERA_PAN_MAX_SPEED,
   DEFAULT_FOCUS,
-  IDLE_ZOOM_SCALE,
-  TRANSITION_WINDOW_MS,
-  ZOOM_IN_TRANSITION_WINDOW_MS
+  IDLE_ZOOM_SCALE
 } from "./constants.js";
+import type { CameraStyleProfile } from "../style-profile.js";
 import { clampFocusToScale, interpolateCursorAt, type CursorPoint, type ZoomFocus } from "./focus.js";
 import { clamp01, easeInOutCubic, easeOutScreenStudio } from "./math.js";
 import { buildZoomRegions, computeRegionStrength } from "./regions.js";
@@ -63,7 +57,8 @@ function panTowardCinematic(
   to: ZoomFocus,
   dtSec: number,
   maxSpeed: number,
-  easeInMul: number
+  easeInMul: number,
+  easeOutNear: number
 ): ZoomFocus {
   const dx = to.cx - from.cx;
   const dy = to.cy - from.cy;
@@ -71,7 +66,7 @@ function panTowardCinematic(
   if (dist < 1e-7) {
     return { cx: to.cx, cy: to.cy };
   }
-  const easeOutMul = 0.4 + 0.6 * clamp01(dist / Math.max(0.02, CAMERA_EASE_OUT_NEAR));
+  const easeOutMul = 0.4 + 0.6 * clamp01(dist / Math.max(0.02, easeOutNear));
   const maxTravel = maxSpeed * dtSec * easeInMul * easeOutMul;
   const step = Math.min(dist, maxTravel);
   const k = step / dist;
@@ -87,6 +82,7 @@ export function buildZoomTimeline(params: {
   fps: number;
   stageWidth: number;
   stageHeight: number;
+  style: CameraStyleProfile;
 }): ZoomFrame[] {
   const telemetry = toTelemetry(params.events, params.stageWidth, params.stageHeight);
   const regions = buildZoomRegions(params.events);
@@ -112,23 +108,35 @@ export function buildZoomTimeline(params: {
     const contextualBlend = clamp01(active * 0.26 + edgeTop * 0.42 + edgeSide * 0.18);
     const guidedFocus = blendFocus(rawFocus, revealTarget, contextualBlend);
 
-    if (focusDistance(guidedFocus, prevGuided) > CAMERA_GUIDED_JUMP_THRESHOLD) {
-      easeInFramesRemaining = Math.max(easeInFramesRemaining, CAMERA_EASE_IN_FRAMES);
+    if (focusDistance(guidedFocus, prevGuided) > params.style.cameraGuidedJumpThreshold) {
+      easeInFramesRemaining = Math.max(easeInFramesRemaining, params.style.cameraEaseInFrames);
     }
     prevGuided = guidedFocus;
 
     const easeInMul =
       easeInFramesRemaining > 0
-        ? 0.22 + 0.78 * easeInOutCubic((CAMERA_EASE_IN_FRAMES - easeInFramesRemaining) / CAMERA_EASE_IN_FRAMES)
+        ? 0.22 +
+          0.78 *
+            easeInOutCubic(
+              (params.style.cameraEaseInFrames - easeInFramesRemaining) / params.style.cameraEaseInFrames
+            )
         : 1;
     easeInFramesRemaining = Math.max(0, easeInFramesRemaining - 1);
 
     const dtSec = frameMs / 1000;
-    smoothedFocus = panTowardCinematic(smoothedFocus, guidedFocus, dtSec, CAMERA_PAN_MAX_SPEED, easeInMul);
+    smoothedFocus = panTowardCinematic(
+      smoothedFocus,
+      guidedFocus,
+      dtSec,
+      params.style.cameraPanMaxSpeed,
+      easeInMul,
+      params.style.cameraEaseOutNear
+    );
 
-    const targetScale = IDLE_ZOOM_SCALE + (ACTIVE_ZOOM_SCALE - IDLE_ZOOM_SCALE) * active;
+    const targetScale = IDLE_ZOOM_SCALE + (params.style.activeZoomScale - IDLE_ZOOM_SCALE) * active;
     if (Math.abs(targetScale - prevScale) > 0.0001) {
-      const duration = targetScale > prevScale ? ZOOM_IN_TRANSITION_WINDOW_MS : TRANSITION_WINDOW_MS;
+      const duration =
+        targetScale > prevScale ? params.style.zoomInTransitionWindowMs : params.style.transitionWindowMs;
       const transitionProgress = Math.min(1, frameMs / duration);
       const eased = easeOutScreenStudio(transitionProgress);
       prevScale = prevScale + (targetScale - prevScale) * eased;
@@ -137,7 +145,7 @@ export function buildZoomTimeline(params: {
     }
 
     const boundedFocus = clampFocusToScale(smoothedFocus, Math.max(1, prevScale));
-    const zoomProgress = clamp01((prevScale - 1) / Math.max(0.0001, ACTIVE_ZOOM_SCALE - 1));
+    const zoomProgress = clamp01((prevScale - 1) / Math.max(0.0001, params.style.activeZoomScale - 1));
     const transform = computeZoomTransform({
       stageWidth: params.stageWidth,
       stageHeight: params.stageHeight,

@@ -1,5 +1,6 @@
 // OpenScreen-inspired cursor effects timeline for synthetic cursor/click emphasis.
 import type { CoordEvent } from "../../capture/types.js";
+import type { CursorStyleProfile } from "../style-profile.js";
 
 export interface CursorKeyframe {
   t: number;
@@ -22,14 +23,14 @@ export interface CursorEffectsTimeline {
   ripples: ClickRipple[];
 }
 
-export function buildCursorEffects(events: CoordEvent[]): CursorEffectsTimeline {
+export function buildCursorEffects(events: CoordEvent[], style: CursorStyleProfile): CursorEffectsTimeline {
   const ordered = [...events].sort((a, b) => a.t - b.t);
   const cursor: CursorKeyframe[] = ordered.map((e) => ({
     t: e.t,
     x: e.x,
     y: e.y,
     visible: true,
-    scale: e.type === "click" || e.type === "dblclick" ? 0.92 : 1
+    scale: e.type === "click" || e.type === "dblclick" ? style.clickScale : 1
   }));
 
   const ripples: ClickRipple[] = ordered
@@ -38,8 +39,8 @@ export function buildCursorEffects(events: CoordEvent[]): CursorEffectsTimeline 
       t: e.t,
       x: e.x,
       y: e.y,
-      durationMs: e.type === "dblclick" ? 420 : 320,
-      maxRadius: e.type === "dblclick" ? 52 : 40
+      durationMs: e.type === "dblclick" ? style.doubleClickDurationMs : style.clickDurationMs,
+      maxRadius: e.type === "dblclick" ? style.doubleClickMaxRadius : style.clickMaxRadius
     }));
 
   return { cursor, ripples };

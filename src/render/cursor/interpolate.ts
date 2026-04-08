@@ -1,7 +1,12 @@
 import type { ClickRipple, CursorKeyframe } from "./effects.js";
 import { easeInOutCubic } from "../zoom/math.js";
+import type { CursorStyleProfile } from "../style-profile.js";
 
-export function interpolateCursorAtTime(keyframes: CursorKeyframe[], t: number): CursorKeyframe | null {
+export function interpolateCursorAtTime(
+  keyframes: CursorKeyframe[],
+  t: number,
+  style: CursorStyleProfile
+): CursorKeyframe | null {
   if (keyframes.length === 0) return null;
   if (t <= keyframes[0].t) return keyframes[0];
   const last = keyframes[keyframes.length - 1];
@@ -33,7 +38,7 @@ export function interpolateCursorAtTime(keyframes: CursorKeyframe[], t: number):
     const nx = -dy / segmentLen;
     const ny = dx / segmentLen;
     const dirSign = lo % 2 === 0 ? 1 : -1;
-    const amplitude = Math.min(14, Math.max(1.5, segmentLen * 0.05));
+    const amplitude = Math.min(style.arcAmplitudeMax, Math.max(1.25, segmentLen * style.arcAmplitudeFactor));
     const arc = Math.sin(Math.PI * u) * amplitude * dirSign;
     arcX = nx * arc;
     arcY = ny * arc;

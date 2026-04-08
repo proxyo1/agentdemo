@@ -34,7 +34,8 @@ export async function runPipeline(rawOptions: unknown): Promise<void> {
       composite: options.composite,
       cursorPng: options.cursorPng,
       cursorHotspotX: options.cursorHotspotX,
-      cursorHotspotY: options.cursorHotspotY
+      cursorHotspotY: options.cursorHotspotY,
+      style: options.style
     });
     logger.info(`Done: ${options.out}`);
   } finally {

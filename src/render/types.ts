@@ -1,3 +1,5 @@
+import type { RenderStyle } from "./style-profile.js";
+
 export interface RenderInput {
   rawVideoPath: string;
   coordsPath: string;
@@ -11,4 +13,6 @@ export interface RenderInput {
   /** Hot spot in PNG pixels from top-left (default 0,0 = tip at top-left of image). */
   cursorHotspotX?: number;
   cursorHotspotY?: number;
+  /** Render style profile. */
+  style: RenderStyle;
 }

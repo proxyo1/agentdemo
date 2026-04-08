@@ -5,6 +5,7 @@ import { makeTempDir, removeDir } from "../../core/fs-utils.js";
 import { logger } from "../../core/logger.js";
 import { activeRipplesAtTime, interpolateCursorAtTime } from "../cursor/interpolate.js";
 import type { CursorEffectsTimeline } from "../cursor/effects.js";
+import type { CursorStyleProfile, FrameStyleProfile } from "../style-profile.js";
 import type { MotionSample } from "../zoom/motion.js";
 import type { ZoomFrame } from "../zoom/timeline.js";
 import { defaultCursorPngPath, tryLoadCursorPng } from "./cursor-asset.js";
@@ -35,6 +36,10 @@ export interface RenderCompositeParams {
   cursorPngPath?: string;
   cursorHotspotX?: number;
   cursorHotspotY?: number;
+  style: FrameStyleProfile;
+  cursorStyle: CursorStyleProfile;
+  crf: number;
+  preset: "medium" | "slow";
 }
 
 export async function renderCompositeMp4(params: RenderCompositeParams): Promise<void> {
@@ -82,7 +87,7 @@ export async function renderCompositeMp4(params: RenderCompositeParams): Promise
           ? params.motionSamples[mi]
           : { t: timeMs, velocity: 0, blurAmount: 0 };
 
-      const cursorKf = interpolateCursorAtTime(params.cursorEffects.cursor, timeMs);
+      const cursorKf = interpolateCursorAtTime(params.cursorEffects.cursor, timeMs, params.cursorStyle);
       const cursor = cursorKf ? { x: cursorKf.x, y: cursorKf.y, scale: cursorKf.scale } : null;
       const ripples = activeRipplesAtTime(params.cursorEffects.ripples, timeMs);
 
@@ -96,7 +101,8 @@ export async function renderCompositeMp4(params: RenderCompositeParams): Promise
         motionBlurAmount: motion?.blurAmount ?? 0,
         cursorImage,
         cursorHotspotX: params.cursorHotspotX,
-        cursorHotspotY: params.cursorHotspotY
+        cursorHotspotY: params.cursorHotspotY,
+        style: params.style
       });
 
       const outName = `comp_${String(i + 1).padStart(6, "0")}.png`;
@@ -118,9 +124,9 @@ export async function renderCompositeMp4(params: RenderCompositeParams): Promise
       "-pix_fmt",
       "yuv420p",
       "-crf",
-      "18",
+      String(params.crf),
       "-preset",
-      "medium",
+      params.preset,
       "-movflags",
       "+faststart",
       params.outputPath

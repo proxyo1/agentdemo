@@ -1,16 +1,16 @@
 import { createCanvas, loadImage, type Image, type SKRSContext2D } from "@napi-rs/canvas";
 import type { ActiveRippleDraw } from "../cursor/interpolate.js";
+import type { FrameStyleProfile } from "../style-profile.js";
 import type { AppliedTransform } from "../zoom/transform.js";
 
 const MAX_MOTION_BLUR_PX = 4;
 
 /** Letterbox margin around the framed window. */
-function stageMargin(videoW: number, videoH: number): number {
-  const m = Math.round(Math.min(videoW, videoH) * 0.065);
-  return Math.min(120, Math.max(56, m));
+function stageMargin(videoW: number, videoH: number, style: FrameStyleProfile): number {
+  const m = Math.round(Math.min(videoW, videoH) * style.marginRatio);
+  return Math.min(style.marginMax, Math.max(style.marginMin, m));
 }
 
-const WINDOW_RADIUS = 14;
 /** Browser-style title bar (traffic lights + URL pill). */
 function browserChromeHeight(videoW: number): number {
   const h = Math.round(Math.min(52, Math.max(40, videoW * 0.032)));
@@ -29,6 +29,12 @@ function drawDarkBackdrop(ctx: SKRSContext2D, outW: number, outH: number): void 
   v.addColorStop(0, "rgba(80, 120, 200, 0.12)");
   v.addColorStop(1, "rgba(0, 0, 0, 0)");
   ctx.fillStyle = v;
+  ctx.fillRect(0, 0, outW, outH);
+
+  const vignette = ctx.createRadialGradient(outW * 0.5, outH * 0.48, outW * 0.2, outW * 0.5, outH * 0.5, outW * 0.9);
+  vignette.addColorStop(0, "rgba(0,0,0,0)");
+  vignette.addColorStop(1, "rgba(0,0,0,0.26)");
+  ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, outW, outH);
 }
 
@@ -122,22 +128,29 @@ function drawWindowFrame(
   ctx: SKRSContext2D,
   margin: number,
   innerW: number,
-  innerH: number
+  innerH: number,
+  style: FrameStyleProfile
 ): void {
   const x = margin;
   const y = margin;
 
   ctx.save();
-  ctx.fillStyle = "rgba(0,0,0,0.45)";
-  roundRect(ctx, x + 6, y + 14, innerW, innerH, WINDOW_RADIUS + 2);
+  ctx.fillStyle = `rgba(0,0,0,${style.shadowAlpha})`;
+  if (style.shadowBlur > 0) {
+    ctx.shadowColor = "rgba(0,0,0,0.32)";
+    ctx.shadowBlur = style.shadowBlur;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 8;
+  }
+  roundRect(ctx, x + style.shadowOffsetX, y + style.shadowOffsetY, innerW, innerH, style.windowRadius + 2);
   ctx.fill();
   ctx.restore();
 
   ctx.save();
   ctx.fillStyle = "#f2f2f3";
-  roundRect(ctx, x, y, innerW, innerH, WINDOW_RADIUS);
+  roundRect(ctx, x, y, innerW, innerH, style.windowRadius);
   ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.12)";
+  ctx.strokeStyle = "rgba(255,255,255,0.16)";
   ctx.lineWidth = 1;
   ctx.stroke();
   ctx.restore();
@@ -252,9 +265,10 @@ export async function drawCompositedFrame(params: {
   cursorImage?: Image | null;
   cursorHotspotX?: number;
   cursorHotspotY?: number;
+  style: FrameStyleProfile;
 }): Promise<Buffer> {
   const img: Image = await loadImage(params.framePath);
-  const margin = stageMargin(params.width, params.height);
+  const margin = stageMargin(params.width, params.height, params.style);
   const chromeH = browserChromeHeight(params.width);
   const innerW = params.width;
   const innerH = chromeH + params.height;
@@ -268,13 +282,13 @@ export async function drawCompositedFrame(params: {
   const ctx = canvas.getContext("2d");
 
   drawDarkBackdrop(ctx, outW, outH);
-  drawWindowFrame(ctx, margin, innerW, innerH);
-  drawBrowserToolbar(ctx, margin, margin, innerW, chromeH, params.width, WINDOW_RADIUS);
+  drawWindowFrame(ctx, margin, innerW, innerH, params.style);
+  drawBrowserToolbar(ctx, margin, margin, innerW, chromeH, params.width, params.style.windowRadius);
 
   const blurPx = Math.min(MAX_MOTION_BLUR_PX, Math.max(0, params.motionBlurAmount) * MAX_MOTION_BLUR_PX);
 
   ctx.save();
-  clipVideoArea(ctx, margin, chromeH, params.width, params.height, WINDOW_RADIUS);
+  clipVideoArea(ctx, margin, chromeH, params.width, params.height, params.style.windowRadius);
 
   if (blurPx > 0.25) {
     ctx.filter = `blur(${blurPx}px)`;
@@ -295,14 +309,14 @@ export async function drawCompositedFrame(params: {
 
   for (const r of params.ripples) {
     const radius = r.progress * r.maxRadius * transform.scale;
-    const alpha = (1 - r.progress) * 0.55;
+    const alpha = (1 - r.progress) * params.style.rippleAlpha;
     const mapped = mapContentPoint(contentX, contentY, transform, r.x, r.y);
     const rx = mapped.x;
     const ry = mapped.y;
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.strokeStyle = "rgba(255,255,255,0.95)";
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = params.style.rippleStrokeWidth;
     ctx.beginPath();
     ctx.arc(rx, ry, Math.max(1, radius), 0, Math.PI * 2);
     ctx.stroke();

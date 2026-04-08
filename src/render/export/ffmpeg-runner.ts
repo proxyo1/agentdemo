@@ -6,6 +6,9 @@ export interface FfmpegRunOptions {
   outputPath: string;
   fps: number;
   interpolate: boolean;
+  primaryCrf: number;
+  fallbackCrf: number;
+  primaryPreset: "medium" | "slow";
 }
 
 export async function runFfmpegWithFallback(opts: FfmpegRunOptions): Promise<void> {
@@ -25,9 +28,9 @@ export async function runFfmpegWithFallback(opts: FfmpegRunOptions): Promise<voi
         "-c:v",
         "libx264",
         "-preset",
-        "medium",
+        opts.primaryPreset,
         "-crf",
-        "18",
+        String(opts.primaryCrf),
         "-pix_fmt",
         "yuv420p",
         "-movflags",
@@ -51,7 +54,7 @@ export async function runFfmpegWithFallback(opts: FfmpegRunOptions): Promise<voi
         "-preset",
         "veryfast",
         "-crf",
-        "20",
+        String(opts.fallbackCrf),
         "-pix_fmt",
         "yuv420p",
         "-movflags",
