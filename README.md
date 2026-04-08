@@ -19,7 +19,11 @@ npm install agentdemo
 
 ### 2) Install the skill
 
-Add the AgentDemo skill in your Cursor setup for that repo.
+Run this command in your repo to download and add the AgentDemo skill:
+
+```bash
+npx skills add proxyo1/agentdemo
+```
 
 ### 3) Ask the agent
 
