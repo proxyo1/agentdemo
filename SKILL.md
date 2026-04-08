@@ -1,6 +1,6 @@
 ---
 
-name: agentdemo-custom-user-flow
+name: agentdemo
 description: Create and export an AgentDemo video for a user-specified app flow, end-to-end. Use when the user asks for a recorded demo video of a specific interaction flow in their local app.
 ---
 # AgentDemo - Custom User Flow
