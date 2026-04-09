@@ -1,4 +1,5 @@
 import type { RenderStyle } from "./style-profile.js";
+import type { CinematicPlan } from "../planning/types.js";
 
 export interface RenderInput {
   rawVideoPath: string;
@@ -15,4 +16,6 @@ export interface RenderInput {
   cursorHotspotY?: number;
   /** Render style profile. */
   style: RenderStyle;
+  /** Optional plan artifact used to annotate render metadata. */
+  plan?: CinematicPlan;
 }

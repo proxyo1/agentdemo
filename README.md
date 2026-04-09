@@ -1,6 +1,6 @@
 # AgentDemo
 
-AgentDemo creates polished demo videos of local web app flows using Playwright capture plus cinematic compositing (camera zoom, synthetic cursor, click ripples).
+AgentDemo creates polished demo videos of local web app flows using a cinematic-first pipeline: plan scenes first, execute interactions second, and composite effects from intentional cues.
 
 ## Quick Start (Agent-First)
 
@@ -8,8 +8,8 @@ Use this package through Cursor+ the AgentDemo skill. The user experience should
 
 1. Install AgentDemo in your app repo.
 2. Install the AgentDemo skill.
-3. Ask the agent what flow to demo.
-4. Agent generates the script, runs AgentDemo, and returns the output video path.
+3. Ask the agent for the demo flow.
+4. Agent plans scenes/effects first, executes the flow, and exports a polished video.
 
 ### 1) Install in your app repo
 
@@ -35,12 +35,20 @@ The agent should handle defaults automatically:
 
 - URL: `http://localhost:3000`
 - Output: `demo.mp4`
-- Script path: `.agentdemo/demo-flow.ts`
+- Plan path: `.agentdemo/cinematic-plan.json`
+
+## How It Works
+
+1. **Plan (Prompt + Codebase):** the agent builds director notes and a normalized cinematic timeline.
+2. **Compile + Execute:** the timeline is compiled into executable browser actions.
+3. **Capture + Composite:** AgentDemo records the run and applies zoom/cursor/ripple effects from plan cues.
+4. **Stop On Blockers:** on first critical failure, AgentDemo stops and writes a blocker report.
 
 ## What AgentDemo Outputs
 
 - Final video: `*.mp4`
 - Sidecar timeline/debug data: `*.zoom.json`
+- Blocker report on failure: `*.mp4.blocker.json`
 
 ## Notes
 
@@ -54,6 +62,12 @@ Manual usage is available for debugging and maintainer workflows:
 
 ```bash
 npx agentdemo run --script <path-to-script.ts> --url <local-url> --out <output.mp4>
+```
+
+Plan-first mode (recommended for agent workflows):
+
+```bash
+npx agentdemo run --prompt "login via email, open jobs, search software engineer, filter linkedin" --url <local-url>
 ```
 
 For AgentDemo source development:

@@ -10,7 +10,12 @@ program.name("agentdemo").description("Record and render local demo videos.");
 
 program
   .command("run")
-  .requiredOption("--script <path>", "Playwright script path")
+  .option("--script <path>", "Playwright script path")
+  .option("--plan-file <path>", "Path to cinematic plan JSON")
+  .option("--prompt <text>", "Prompt used to generate a cinematic plan")
+  .option("--codebase-root <path>", "Codebase root used for planner context", process.cwd())
+  .option("--plan-out <path>", "Where to write generated plan JSON", ".agentdemo/cinematic-plan.json")
+  .option("--plan-only", "Generate/validate plan artifact and exit")
   .requiredOption("--url <url>", "Base URL for local app")
   .option("--out <path>", "Final mp4 output path", "demo.mp4")
   .option("--fps <number>", "Output frame rate (24-120)", "60")

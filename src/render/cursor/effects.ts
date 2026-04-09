@@ -30,7 +30,12 @@ export function buildCursorEffects(events: CoordEvent[], style: CursorStyleProfi
     x: e.x,
     y: e.y,
     visible: true,
-    scale: e.type === "click" || e.type === "dblclick" ? style.clickScale : 1
+    scale:
+      typeof e.detail?.cueCursorScale === "number" && e.detail.cueCursorScale > 0
+        ? e.detail.cueCursorScale
+        : e.type === "click" || e.type === "dblclick"
+          ? style.clickScale
+          : 1
   }));
 
   const ripples: ClickRipple[] = ordered
@@ -39,8 +44,18 @@ export function buildCursorEffects(events: CoordEvent[], style: CursorStyleProfi
       t: e.t,
       x: e.x,
       y: e.y,
-      durationMs: e.type === "dblclick" ? style.doubleClickDurationMs : style.clickDurationMs,
-      maxRadius: e.type === "dblclick" ? style.doubleClickMaxRadius : style.clickMaxRadius
+      durationMs:
+        typeof e.detail?.cueRippleDurationMs === "number" && e.detail.cueRippleDurationMs > 0
+          ? e.detail.cueRippleDurationMs
+          : e.type === "dblclick"
+            ? style.doubleClickDurationMs
+            : style.clickDurationMs,
+      maxRadius:
+        typeof e.detail?.cueRippleRadius === "number" && e.detail.cueRippleRadius > 0
+          ? e.detail.cueRippleRadius
+          : e.type === "dblclick"
+            ? style.doubleClickMaxRadius
+            : style.clickMaxRadius
     }));
 
   return { cursor, ripples };

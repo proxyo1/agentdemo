@@ -2,7 +2,12 @@ import { z } from "zod";
 import type { RenderStyle } from "../render/style-profile.js";
 
 const cliOptionsSchema = z.object({
-  script: z.string().min(1, "Expected --script path"),
+  script: z.string().min(1).optional(),
+  planFile: z.string().min(1).optional(),
+  prompt: z.string().min(1).optional(),
+  codebaseRoot: z.string().min(1).default(process.cwd()),
+  planOut: z.string().min(1).default(".agentdemo/cinematic-plan.json"),
+  planOnly: z.boolean().default(false),
   url: z.url("Expected valid --url value"),
   out: z.string().min(1).default("demo.mp4"),
   fps: z.coerce.number().int().min(24).max(120).default(60),
@@ -35,6 +40,12 @@ export function parseCliOptions(options: unknown): CliOptions {
     delete raw.cursorPng;
   }
   const parsed = cliOptionsSchema.parse({ ...raw, composite, style });
+  if (!parsed.script && !parsed.planFile && !parsed.prompt) {
+    throw new Error("Expected one of --script, --plan-file, or --prompt.");
+  }
+  if (parsed.planOnly && !parsed.prompt && !parsed.planFile) {
+    throw new Error("--plan-only requires --prompt or --plan-file.");
+  }
   if (parsed.microPauseMaxMs < parsed.microPauseMinMs) {
     throw new Error("microPauseMaxMs must be >= microPauseMinMs");
   }

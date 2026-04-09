@@ -1,9 +1,9 @@
 ---
 
 name: agentdemo
-description: Create and export an AgentDemo video for a user-specified app flow, end-to-end. Use when the user asks for a recorded demo video of a specific interaction flow in their local app.
+description: Create and export an AgentDemo video with a cinematic-first workflow. Use when the user asks for a recorded demo video of a specific interaction flow in their local app.
 ---
-# AgentDemo - Custom User Flow
+AgentDemo - Custom User Flow
 
 Use this skill when the user wants a recorded demo video of a specific flow they describe.
 
@@ -38,12 +38,16 @@ Ask follow-up questions only when a provided value is ambiguous/invalid, or when
 4. Preflight Playwright browser:
   - If run fails with missing Chromium/browser executable errors, execute `npx playwright install chromium`.
   - Retry from project root.
-5. Script creation (agent-authored only):
-  - Before writing selectors, **read the codebase** for the pages and components involved in the user’s flow (layout, navbar/header, footer, shells, feature pages). Infer real control labels, URLs, landmarks (`<nav>`, `<main>`, `<footer>` / `contentinfo`), and places where the **same visible text appears twice** (header vs footer, mobile vs desktop).
-  - Create or replace a full script file in the repo (for example `.agentdemo/demo-flow.ts`).
-  - The script must be complete and runnable as-is, including helpers and full flow.
-  - No scaffold output, TODOs, placeholders, or partial stubs.
-6. Export video (required):
+5. Cinematic planning (required, no approval gate):
+  - Build a cinematic plan first from user prompt + codebase reading.
+  - Produce a hybrid artifact:
+    - director notes (human-readable beats and pacing intent),
+    - normalized JSON timeline (scene/action/effect cues).
+  - Prioritize cinematic quality: intentional zoom beats, readable holds, and smooth narrative progression.
+6. Compile + execute:
+  - Compile the timeline into executable browser actions.
+  - Run execution with immediate-stop policy on first critical blocker.
+7. Export video (required):
 
 ```bash
 npx agentdemo run \
@@ -53,13 +57,14 @@ npx agentdemo run \
 
 Use optional flags only when the user asks for overrides (for example `--out`, `--fps`, `--startup-wait-ms`, `--tail-wait-ms`, `--action-delay-ms`, `--type-char-delay-ms`).
 
-7. Verify output:
+1. Verify output:
   - Confirm the final `mp4` exists at the requested output path.
   - If export fails, report the exact blocking step and command error.
+  - Include blocker artifact path (`*.mp4.blocker.json`) when present.
 
-## Script Authoring Rules (Important)
+## Cinematic Planning Rules (Important)
 
-When authoring `.agentdemo/demo-flow.ts`, treat the demo as a **real user session**: the composited cursor should move and pause the way someone would read the page, use the chrome, then act in content—not a robot jumping only between distant controls.
+When creating the cinematic timeline, treat the demo as a **real user session**: the composited cursor should move and pause the way someone would read the page, use the chrome, then act in content—not a robot jumping only between distant controls.
 
 ### Realistic user flow (cursor + pacing)
 
@@ -83,7 +88,7 @@ When authoring `.agentdemo/demo-flow.ts`, treat the demo as a **real user sessio
 
 ## Quality Bar
 
-- The generated script must be complete and runnable.
+- The generated timeline must compile into a complete runnable flow.
 - The produced demo should feel like a **credible user flow** (pace, cursor path, and focus on content), not a stress test of the navbar.
 - The produced demo should avoid obvious framing artifacts:
   - camera hugging only the cursor in nav

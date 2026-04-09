@@ -48,42 +48,42 @@ export function createLoggedActions(events: CoordEvent[], pacing: ActionPacing):
     randomIntInclusive(rng, pacing.microPauseMinMs, pacing.microPauseMaxMs);
 
   return {
-    async hover(locator) {
+    async hover(locator, detail) {
       await locator.hover();
       const { x, y } = await centerOf(locator);
-      events.push({ t: now(), type: "hover", x, y });
+      events.push({ t: now(), type: "hover", x, y, detail });
       await sleep(pacing.actionDelayMs);
     },
-    async click(locator) {
+    async click(locator, detail) {
       await locator.hover();
       const { x, y } = await centerOf(locator);
-      events.push({ t: now(), type: "position", x, y });
+      events.push({ t: now(), type: "position", x, y, detail });
       await sleep(microPauseMs());
-      events.push({ t: now(), type: "click", x, y });
+      events.push({ t: now(), type: "click", x, y, detail });
       await locator.click();
       await sleep(pacing.actionDelayMs);
     },
-    async dblclick(locator) {
+    async dblclick(locator, detail) {
       await locator.hover();
       const { x, y } = await centerOf(locator);
-      events.push({ t: now(), type: "position", x, y });
+      events.push({ t: now(), type: "position", x, y, detail });
       await sleep(microPauseMs());
-      events.push({ t: now(), type: "dblclick", x, y, detail: { clickCount: 2 } });
+      events.push({ t: now(), type: "dblclick", x, y, detail: { clickCount: 2, ...(detail ?? {}) } });
       await locator.dblclick();
       await sleep(pacing.actionDelayMs);
     },
-    async type(locator, text) {
+    async type(locator, text, detail) {
       await locator.hover();
       const { x, y } = await centerOf(locator);
-      events.push({ t: now(), type: "position", x, y });
+      events.push({ t: now(), type: "position", x, y, detail });
       await sleep(microPauseMs());
-      events.push({ t: now(), type: "type", x, y, detail: { chars: text.length } });
+      events.push({ t: now(), type: "type", x, y, detail: { chars: text.length, ...(detail ?? {}) } });
       await locator.click();
       await locator.pressSequentially(text, { delay: pacing.typeCharDelayMs });
       // Hold camera focus on the field until typing (and a short read beat) finish; otherwise the
       // zoom path interpolates toward the next click for the whole pressSequentially duration.
       await sleep(Math.max(pacing.actionDelayMs, 450));
-      events.push({ t: now(), type: "position", x, y });
+      events.push({ t: now(), type: "position", x, y, detail });
     }
   };
 }

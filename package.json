@@ -17,6 +17,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/cli/index.ts",
+    "test": "tsx --test src/tests/**/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "capture:example": "tsx playwright/scripts/example-flow.ts",
     "start": "tsx src/cli/index.ts run --script playwright/scripts/example-flow.ts --url http://localhost:3000 --out demo.mp4",

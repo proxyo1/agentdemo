@@ -17,10 +17,10 @@ export interface CaptureArtifacts {
 }
 
 export interface LoggedActions {
-  hover(locator: Locator): Promise<void>;
-  click(locator: Locator): Promise<void>;
-  dblclick(locator: Locator): Promise<void>;
-  type(locator: Locator, text: string): Promise<void>;
+  hover(locator: Locator, detail?: Record<string, string | number | boolean>): Promise<void>;
+  click(locator: Locator, detail?: Record<string, string | number | boolean>): Promise<void>;
+  dblclick(locator: Locator, detail?: Record<string, string | number | boolean>): Promise<void>;
+  type(locator: Locator, text: string, detail?: Record<string, string | number | boolean>): Promise<void>;
 }
 
 export interface DemoContext {

@@ -2,14 +2,17 @@ import { readdir, rm } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createJiti } from "jiti";
-import { chromium, type BrowserContext } from "playwright";
+import { chromium, type BrowserContext, type Locator, type Page } from "playwright";
 import { ensureDir } from "../core/fs-utils.js";
 import { createLoggedActions } from "./action-logger.js";
 import { writeCoords } from "./coords-writer.js";
 import type { CaptureArtifacts, CoordEvent, DemoScript } from "./types.js";
+import type { CompiledAction, CompiledDemoFlow, SelectorRef } from "../planning/types.js";
+import { SceneExecutionError } from "./errors.js";
 
 interface RecordInput {
-  scriptPath: string;
+  scriptPath?: string;
+  compiledFlow?: CompiledDemoFlow;
   url: string;
   tempDir: string;
   startupWaitMs: number;
@@ -75,6 +78,64 @@ async function closeContextWithRetry(context: BrowserContext): Promise<void> {
   }
 }
 
+function toLocator(page: Page, target: SelectorRef): Locator {
+  if (target.testId) return page.getByTestId(target.testId);
+  if (target.role) {
+    const role = target.role as Parameters<Page["getByRole"]>[0];
+    return page.getByRole(role, target.name ? { name: target.name, exact: target.exact } : undefined);
+  }
+  if (target.text) return page.getByText(target.text, target.exact ? { exact: true } : undefined);
+  if (target.css) return page.locator(target.css);
+  throw new Error("Action target must provide one selector strategy.");
+}
+
+function toCueDetail(action: CompiledAction): Record<string, string | number | boolean> {
+  return {
+    actionId: action.id,
+    cueZoomScale: action.cue?.zoomScale ?? 0,
+    cueCursorScale: action.cue?.cursorScale ?? 0,
+    cueRippleRadius: action.cue?.rippleRadius ?? 0,
+    cueRippleDurationMs: action.cue?.rippleDurationMs ?? 0
+  };
+}
+
+async function runCompiledFlow(page: Page, actionsApi: ReturnType<typeof createLoggedActions>, flow: CompiledDemoFlow): Promise<void> {
+  for (const scene of flow.scenes) {
+    for (const action of scene.actions) {
+      try {
+        if (action.kind === "wait") {
+          await page.waitForTimeout(action.waitMs ?? 250);
+          continue;
+        }
+        if (action.kind === "navigate") {
+          await page.goto(action.value ?? "/");
+          await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+          continue;
+        }
+        if (action.kind === "assert_url") {
+          const expected = action.value ?? "";
+          if (!page.url().includes(expected)) {
+            throw new Error(`Expected current url to include "${expected}"`);
+          }
+          continue;
+        }
+        const target = action.target ? toLocator(page, action.target) : undefined;
+        if (!target) throw new Error("Missing selector target.");
+        const detail = { sceneId: scene.id, ...toCueDetail(action) };
+        if (action.kind === "click") await actionsApi.click(target, detail);
+        else if (action.kind === "dblclick") await actionsApi.dblclick(target, detail);
+        else if (action.kind === "hover") await actionsApi.hover(target, detail);
+        else if (action.kind === "type") await actionsApi.type(target, action.value ?? "", detail);
+        if (action.cue?.holdMs && action.cue.holdMs > 0) {
+          await page.waitForTimeout(action.cue.holdMs);
+        }
+      } catch (cause) {
+        throw new SceneExecutionError(scene.id, action.id, cause);
+      }
+    }
+  }
+}
+
 export async function recordSession(input: RecordInput): Promise<CaptureArtifacts> {
   const videoDir = join(input.tempDir, "raw-video");
   const coordsPath = join(input.tempDir, "coords.json");
@@ -93,7 +154,7 @@ export async function recordSession(input: RecordInput): Promise<CaptureArtifact
 
       const page = await context.newPage();
       const events: CoordEvent[] = [];
-      const script = await loadDemoScript(input.scriptPath);
+      const script = input.compiledFlow ? undefined : await loadDemoScript(input.scriptPath ?? "");
       const actions = createLoggedActions(events, {
         actionDelayMs: input.actionDelayMs,
         typeCharDelayMs: input.typeCharDelayMs,
@@ -107,7 +168,13 @@ export async function recordSession(input: RecordInput): Promise<CaptureArtifact
       if (input.startupWaitMs > 0) {
         await page.waitForTimeout(input.startupWaitMs);
       }
-      await script({ page, actions });
+      if (input.compiledFlow) {
+        await runCompiledFlow(page, actions, input.compiledFlow);
+      } else if (script) {
+        await script({ page, actions });
+      } else {
+        throw new Error("No executable flow found. Provide --script, --plan-file, or --prompt.");
+      }
       if (input.tailWaitMs > 0) {
         await page.waitForTimeout(input.tailWaitMs);
       }

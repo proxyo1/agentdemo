@@ -35,6 +35,22 @@ function activeStrengthAt(t: number, regions: ReturnType<typeof buildZoomRegions
   return Math.max(0, Math.min(1, strength));
 }
 
+function cueZoomScaleAt(t: number, events: CoordEvent[]): number | undefined {
+  let best: number | undefined;
+  let bestDist = Number.POSITIVE_INFINITY;
+  for (const event of events) {
+    const cueScale = typeof event.detail?.cueZoomScale === "number" ? event.detail.cueZoomScale : undefined;
+    if (!cueScale || cueScale <= 1) continue;
+    const dt = Math.abs(event.t - t);
+    if (dt > 650) continue;
+    if (dt < bestDist) {
+      bestDist = dt;
+      best = cueScale;
+    }
+  }
+  return best;
+}
+
 function blendFocus(a: ZoomFocus, b: ZoomFocus, t: number): ZoomFocus {
   return {
     cx: a.cx + (b.cx - a.cx) * t,
@@ -132,12 +148,14 @@ export function buildZoomTimeline(params: {
     );
 
     const targetScale = IDLE_ZOOM_SCALE + (params.style.activeZoomScale - IDLE_ZOOM_SCALE) * active;
-    if (Math.abs(targetScale - prevScale) > 0.0001) {
+    const cueScale = cueZoomScaleAt(t, params.events);
+    const effectiveTargetScale = cueScale ? Math.max(targetScale, cueScale) : targetScale;
+    if (Math.abs(effectiveTargetScale - prevScale) > 0.0001) {
       // Use framerate-independent exponential smoothing based on zoomHalfLifeMs
       const stiffness = Math.LN2 / (params.style.zoomHalfLifeMs / 1000);
-      prevScale = targetScale - (targetScale - prevScale) * Math.exp(-stiffness * dtSec);
+      prevScale = effectiveTargetScale - (effectiveTargetScale - prevScale) * Math.exp(-stiffness * dtSec);
     } else {
-      prevScale = targetScale;
+      prevScale = effectiveTargetScale;
     }
 
     const boundedFocus = clampFocusToScale(smoothedFocus, Math.max(1, prevScale));

@@ -64,6 +64,18 @@ export async function renderPolishedVideo(input: RenderInput): Promise<void> {
       {
         layers: ["background", "video", "cameraZoom", "syntheticCursor", "clickRipples"],
         style: input.style,
+        planner: input.plan
+          ? {
+              generatedAt: input.plan.generatedAt,
+              failurePolicy: input.plan.failurePolicy,
+              scenes: input.plan.scenes.map((scene) => ({
+                id: scene.id,
+                title: scene.title,
+                actions: scene.actions.length
+              })),
+              directorNotes: input.plan.directorNotes
+            }
+          : undefined,
         zoom: { frames: zoomTimeline, regions: zoomRegions },
         cursor: cursorEffects,
         motion: motionSamples
