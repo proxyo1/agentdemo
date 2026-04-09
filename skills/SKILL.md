@@ -71,6 +71,7 @@ When creating the cinematic timeline, treat the demo as a **real user session**:
 - **Path:** Alternate between **global UI** (nav, logo) and **in-viewport content** (headings, hero, the section that just scrolled into view, forms). That yields natural arcs for AgentDemo’s interpolated cursor and camera, instead of endless nav-only hops or mystery jumps off-screen.
 - **Dwell time:** Use `settle()` after loads and meaningful DOM changes; use `step()` with a **short hold (~350–600ms)** after each action so layout updates and copy are glanceable—like a user scanning before the next click.
 - **After navigation or scroll:** Briefly **hover a small, visible content anchor** in the area the user would now be looking at (see below) before the next header/footer click when the story needs it—not instant back-to-nav.
+- **Pre-input transitions:** Do not add decorative hover beats between an explicit intent action and the next obvious action (for example `Sign In` -> `Email` field). For forms/modals, move directly to the first relevant input unless a short wait is needed for interactivity.
 - **Typing:** Prefer `actions.type` on the real input so character delays stay human; avoid pasting or instant fills unless the user asks otherwise.
 - **Rhythm:** No burst of clicks with no pauses; order steps as a person would (e.g. land on page → orient → use nav or search → see result).
 
@@ -79,6 +80,7 @@ When creating the cinematic timeline, treat the demo as a **real user session**:
 - **Playwright strict mode:** every locator must resolve to exactly one element. If the UI duplicates link or button names (common: nav + footer), **scope** with landmarks, for example `page.getByRole("navigation").getByRole("link", { name: "…", exact: true })`, or `getByRole("main")`, or project `data-testid` when the repo uses them. Do not rely on page-wide `getByRole("link", { name: "…" })` when a quick read of components shows repeated labels.
 - Keep a `settle()` helper and call it after each meaningful interaction.
 - Use a `step()` helper that includes a short hold (`~350-600ms`) so state changes are visible.
+- For high-intent flows (auth, search, checkout), prefer shorter transition holds (`~200-350ms`) between directly related actions.
 - Avoid long chains of top-nav clicks without viewport interaction.
 - **Recorded cursor position = locator bounding-box center:** AgentDemo logs each action’s coordinates from the center of that element’s box. If the box is huge or mostly off-screen, the composited cursor will **animate to the bottom of the page or outside the viewport** between steps.
 - **Do not** use `actions.hover` on document-scale wrappers whose geometric center is usually off-screen, for example: `main`, `body`, `#__next`, `#root`, or full-page layout containers.
